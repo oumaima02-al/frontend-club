@@ -15,35 +15,83 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-  // Charger l'utilisateur depuis le localStorage au démarrage
+  // Vérifier l'authentification au démarrage
   useEffect(() => {
-    const storedToken = localStorage.getItem('token');
-    const storedUser = localStorage.getItem('user');
+    const checkAuth = async () => {
+      try {
+        const storedToken = localStorage.getItem('token');
+        const storedUser = localStorage.getItem('user');
 
-    if (storedToken && storedUser) {
-      setToken(storedToken);
-      setUser(JSON.parse(storedUser));
-    }
-    setLoading(false);
+        console.log('🔄 Vérification auth - Token:', !!storedToken, 'User:', !!storedUser);
+
+        if (storedToken && storedUser) {
+          const userData = JSON.parse(storedUser);
+          
+          setToken(storedToken);
+          setUser(userData);
+          setIsAuthenticated(true);
+          
+          console.log('✅ Utilisateur restauré:', userData);
+        }
+      } catch (error) {
+        console.error('❌ Error checking auth:', error);
+        logout();
+      } finally {
+        setLoading(false);
+        console.log('🏁 Chargement auth terminé');
+      }
+    };
+
+    checkAuth();
   }, []);
 
   // Connexion
   const login = async (email, password) => {
     try {
+      console.log('🔐 Tentative de connexion:', email);
+      
       const data = await authService.login(email, password);
-      
-      setToken(data.token);
-      setUser(data.user);
-      
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('user', JSON.stringify(data.user));
-      
-      return { success: true };
+      console.log('📦 Réponse API login:', data);
+
+      // S'adapter à différentes structures de réponse
+      const authToken = data.token || data.access_token || data.data?.token;
+      const userData = data.user || data.data?.user || data.data;
+
+      console.log('🔑 Token extrait:', !!authToken);
+      console.log ('👤 User extrait:', userData);
+
+      if (authToken && userData) {
+        setToken(authToken);
+        setUser(userData);
+        setIsAuthenticated(true);
+        
+        localStorage.setItem('token', authToken);
+        localStorage.setItem('user', JSON.stringify(userData));
+        
+        console.log('✅ Connexion réussie!');
+        return { success: true, user: userData };
+      } else {
+        console.log('❌ Données manquantes dans la réponse');
+        throw new Error('Structure de réponse invalide de l\'API');
+      }
     } catch (error) {
+      console.error('🚨 Erreur login complète:', error);
+      console.error('Détails erreur:', {
+        status: error.response?.status,
+        data: error.response?.data,
+        message: error.message
+      });
+      
+      const errorMessage = error.response?.data?.message || 
+                          error.response?.data?.error ||
+                          error.message || 
+                          'Erreur de connexion au serveur';
+      
       return {
         success: false,
-        message: error.response?.data?.message || 'Erreur de connexion',
+        message: errorMessage,
       };
     }
   };
@@ -53,13 +101,21 @@ export const AuthProvider = ({ children }) => {
     try {
       const data = await authService.register(userData);
       
-      setToken(data.token);
-      setUser(data.user);
-      
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('user', JSON.stringify(data.user));
-      
-      return { success: true };
+      const authToken = data.token || data.access_token;
+      const userInfo = data.user || data.data;
+
+      if (authToken && userInfo) {
+        setToken(authToken);
+        setUser(userInfo);
+        setIsAuthenticated(true);
+        
+        localStorage.setItem('token', authToken);
+        localStorage.setItem('user', JSON.stringify(userInfo));
+        
+        return { success: true, user: userInfo };
+      } else {
+        throw new Error('Données d\'inscription manquantes');
+      }
     } catch (error) {
       return {
         success: false,
@@ -77,8 +133,10 @@ export const AuthProvider = ({ children }) => {
     } finally {
       setToken(null);
       setUser(null);
+      setIsAuthenticated(false);
       localStorage.removeItem('token');
       localStorage.removeItem('user');
+      console.log('👋 Déconnexion effectuée');
     }
   };
 
@@ -91,11 +149,11 @@ export const AuthProvider = ({ children }) => {
     user,
     token,
     loading,
+    isAuthenticated,
     login,
     register,
     logout,
-    hasRole,
-    isAuthenticated: !!token,
+    hasRole
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

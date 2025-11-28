@@ -1,9 +1,10 @@
 import React from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 const ProtectedRoute = ({ children, allowedRoles = [] }) => {
-  const { isAuthenticated, user, loading } = useAuth();
+  const { isAuthenticated, user, loading, getDashboardPath } = useAuth();
+  const location = useLocation();
 
   if (loading) {
     return (
@@ -14,12 +15,14 @@ const ProtectedRoute = ({ children, allowedRoles = [] }) => {
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
+    // Rediriger vers login avec retour à la page demandée
+    return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
   // Vérifier les rôles autorisés
-  if (allowedRoles.length > 0 && !allowedRoles.includes(user?.role)) {
-    return <Navigate to="/dashboard" replace />;
+  if (allowedRoles.length > 0 && user && !allowedRoles.includes(user.role)) {
+    // Rediriger vers le dashboard approprié selon le rôle
+    return <Navigate to={getDashboardPath()} replace />;
   }
 
   return children;

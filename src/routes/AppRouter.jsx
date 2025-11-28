@@ -23,11 +23,11 @@ import NotificationsPage from '../pages/NotificationsPage';
 import ProfilePage from '../pages/ProfilePage';
 
 const AppRouter = () => {
-  const { user } = useAuth();
+  const { user, isAuthenticated } = useAuth();
 
   // Composant pour rediriger vers le bon dashboard selon le rôle
   const DashboardRouter = () => {
-    if (!user) return <Navigate to="/login" />;
+    if (!user) return <Navigate to="/login" replace />;
 
     switch (user.role) {
       case 'admin':
@@ -37,8 +37,16 @@ const AppRouter = () => {
       case 'player':
         return <DashboardPlayer />;
       default:
-        return <Navigate to="/login" />;
+        return <Navigate to="/login" replace />;
     }
+  };
+
+  // Redirection conditionnelle pour les pages d'authentification
+  const PublicRoute = ({ children }) => {
+    if (isAuthenticated && user) {
+      return <Navigate to="/dashboard" replace />;
+    }
+    return children;
   };
 
   return (
@@ -46,9 +54,23 @@ const AppRouter = () => {
       <Routes>
         {/* Routes publiques */}
         <Route path="/" element={<LandingPage />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-
+        
+       <Route 
+          path="/login" 
+          element={
+            <PublicRoute>
+              <Login />
+            </PublicRoute>
+          } 
+        />
+        <Route 
+          path="/register" 
+          element={
+            <PublicRoute>
+              <Register />
+            </PublicRoute>
+          } 
+        />
         {/* Dashboard (redirige selon le rôle) */}
         <Route
           path="/dashboard"
@@ -68,10 +90,11 @@ const AppRouter = () => {
             </ProtectedRoute>
           }
         />
+        
         <Route
           path="/players/:id"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute allowedRoles={['admin']}>
               <PlayerDetails />
             </ProtectedRoute>
           }
@@ -86,6 +109,7 @@ const AppRouter = () => {
             </ProtectedRoute>
           }
         />
+        
         <Route
           path="/trainings/:id"
           element={
@@ -126,7 +150,7 @@ const AppRouter = () => {
         />
 
         {/* Redirection par défaut */}
-        <Route path="*" element={<Navigate to="/" />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>
   );

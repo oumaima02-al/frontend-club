@@ -4,9 +4,11 @@ import Sidebar from '../components/Sidebar';
 import StatsCard from '../components/StatsCard';
 import LineChartComponent from '../components/Charts/LineChartComponent';
 import BarChartComponent from '../components/Charts/BarChartComponent';
-import { Calendar, TrendingUp, Award, Target } from 'lucide-react';
+import { Calendar, TrendingUp, Award, Target, MapPin, Clock } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import statsService from '../services/statsService';
+import trainingsService from '../services/trainingsService';
+import matchesService from '../services/matchesService';
 
 const DashboardPlayer = () => {
   const { user } = useAuth();
@@ -16,6 +18,8 @@ const DashboardPlayer = () => {
     avgPerformance: 0,
     upcomingMatches: 0,
   });
+  const [upcomingTrainings, setUpcomingTrainings] = useState([]);
+  const [upcomingMatches, setUpcomingMatches] = useState([]);
   const [loading, setLoading] = useState(true);
 
   // Données factices pour les graphiques
@@ -36,30 +40,6 @@ const DashboardPlayer = () => {
     { competence: 'Passe', score: 7.5 },
   ];
 
-  const upcomingMatches = [
-    {
-      id: 1,
-      date: '15 Janvier 2025',
-      opponent: 'Paris Volley',
-      location: 'Domicile',
-      time: '18:00',
-    },
-    {
-      id: 2,
-      date: '22 Janvier 2025',
-      opponent: 'Lyon Volley',
-      location: 'Extérieur',
-      time: '20:00',
-    },
-    {
-      id: 3,
-      date: '29 Janvier 2025',
-      opponent: 'Marseille Volley',
-      location: 'Domicile',
-      time: '19:00',
-    },
-  ];
-
   useEffect(() => {
     fetchDashboardData();
   }, []);
@@ -67,6 +47,20 @@ const DashboardPlayer = () => {
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
+
+      // Récupérer les entraînements à venir
+      const trainingsData = await trainingsService.getAllTrainings();
+      const upcoming = trainingsData
+        .filter((t) => t.status === 'upcoming' || t.status === 'in_progress')
+        .slice(0, 5);
+      setUpcomingTrainings(upcoming);
+
+      // Récupérer les matchs à venir
+      const matchesData = await matchesService.getAllMatches();
+      const upcomingMatchesData = matchesData
+        .filter((m) => m.status === 'upcoming' || m.status === 'in_progress')
+        .slice(0, 3);
+      setUpcomingMatches(upcomingMatchesData);
 
       // Récupérer les stats du joueur
       // const playerStats = await statsService.getPlayerStats(user.id);
@@ -77,7 +71,7 @@ const DashboardPlayer = () => {
         trainingsAttended: 24,
         attendanceRate: 92,
         avgPerformance: 8.0,
-        upcomingMatches: 3,
+        upcomingMatches: upcomingMatchesData.length,
       });
     } catch (error) {
       console.error('Erreur lors du chargement des données:', error);
@@ -152,29 +146,91 @@ const DashboardPlayer = () => {
             />
           </div>
 
+          {/* Upcoming Trainings */}
+          <div className="card mb-8">
+            <h3 className="text-xl font-semibold text-white mb-6">Prochains entraînements</h3>
+            <div className="space-y-4">
+              {upcomingTrainings.length > 0 ? (
+                upcomingTrainings.map((training) => (
+                  <div
+                    key={training.id}
+                    className="bg-dark-700 rounded-lg p-4 flex items-center justify-between hover:bg-dark-600 transition"
+                  >
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-3 mb-2">
+                        <Calendar size={16} className="text-neon-green" />
+                        <span className="text-neon-green font-semibold">
+                          {new Date(training.date).toLocaleDateString('fr-FR')}
+                        </span>
+                        <span className="text-gray-500">•</span>
+                        <Clock size={16} className="text-gray-400" />
+                        <span className="text-gray-400">{training.time}</span>
+                      </div>
+                      <h4 className="text-white font-medium mb-1">{training.description}</h4>
+                      <div className="flex items-center space-x-2 text-sm text-gray-400">
+                        <MapPin size={14} />
+                        <span>{training.location}</span>
+                      </div>
+                    </div>
+                    <span
+                      className={`px-3 py-1 rounded-full text-xs font-medium ${
+                        training.status === 'in_progress'
+                          ? 'bg-yellow-500/10 text-yellow-500'
+                          : 'bg-blue-500/10 text-blue-500'
+                      }`}
+                    >
+                      {training.status === 'in_progress' ? 'En cours' : 'À venir'}
+                    </span>
+                  </div>
+                ))
+              ) : (
+                <p className="text-gray-400 text-center py-8">Aucun entraînement prévu</p>
+              )}
+            </div>
+          </div>
+
           {/* Upcoming Matches */}
           <div className="card mb-8">
             <h3 className="text-xl font-semibold text-white mb-6">Mes prochains matchs</h3>
             <div className="space-y-4">
-              {upcomingMatches.map((match) => (
-                <div
-                  key={match.id}
-                  className="bg-dark-700 rounded-lg p-4 flex items-center justify-between hover:bg-dark-600 transition"
-                >
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-3 mb-2">
-                      <span className="text-neon-green font-semibold">{match.date}</span>
-                      <span className="text-gray-500">•</span>
-                      <span className="text-gray-400">{match.time}</span>
+              {upcomingMatches.length > 0 ? (
+                upcomingMatches.map((match) => (
+                  <div
+                    key={match.id}
+                    className="bg-dark-700 rounded-lg p-4 flex items-center justify-between hover:bg-dark-600 transition"
+                  >
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-3 mb-2">
+                        <Calendar size={16} className="text-neon-green" />
+                        <span className="text-neon-green font-semibold">
+                          {new Date(match.date).toLocaleDateString('fr-FR')}
+                        </span>
+                        <span className="text-gray-500">•</span>
+                        <Clock size={16} className="text-gray-400" />
+                        <span className="text-gray-400">{match.time || 'À définir'}</span>
+                      </div>
+                      <h4 className="text-white font-medium mb-1">
+                        {match.team1} vs {match.team2}
+                      </h4>
+                      <div className="flex items-center space-x-2 text-sm text-gray-400">
+                        <MapPin size={14} />
+                        <span>{match.location}</span>
+                      </div>
                     </div>
-                    <h4 className="text-white font-medium mb-1">vs {match.opponent}</h4>
-                    <p className="text-gray-400 text-sm">{match.location}</p>
+                    <span
+                      className={`px-3 py-1 rounded-full text-xs font-medium ${
+                        match.status === 'in_progress'
+                          ? 'bg-yellow-500/10 text-yellow-500'
+                          : 'bg-blue-500/10 text-blue-500'
+                      }`}
+                    >
+                      {match.status === 'in_progress' ? 'En cours' : 'À venir'}
+                    </span>
                   </div>
-                  <button className="btn-primary">
-                    Détails
-                  </button>
-                </div>
-              ))}
+                ))
+              ) : (
+                <p className="text-gray-400 text-center py-8">Aucun match prévu</p>
+              )}
             </div>
           </div>
 
@@ -242,4 +298,4 @@ const DashboardPlayer = () => {
   );
 };
 
-export default DashboardPlayer;
+export default DashboardPlayer; 

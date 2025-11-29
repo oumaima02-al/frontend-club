@@ -1,8 +1,8 @@
 import React from 'react';
-import { Eye, Edit, Trash2, Calendar } from 'lucide-react';
+import { Eye, Trash2, Calendar, Bell } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-const TrainingsTable = ({ trainings, onDelete }) => {
+const TrainingsTable = ({ trainings, onDelete, canManage }) => {
   const navigate = useNavigate();
 
   const formatDate = (dateString) => {
@@ -12,6 +12,16 @@ const TrainingsTable = ({ trainings, onDelete }) => {
       month: 'long',
       year: 'numeric',
     });
+  };
+
+  const handleDeleteWithAnnounce = (id) => {
+    const shouldAnnounce = window.confirm(
+      'Voulez-vous notifier les joueurs de cette annulation ?\nCliquez sur "OK" pour notifier, "Annuler" pour supprimer sans notification.'
+    );
+    
+    if (shouldAnnounce !== null) {
+      onDelete(id, shouldAnnounce);
+    }
   };
 
   return (
@@ -29,7 +39,10 @@ const TrainingsTable = ({ trainings, onDelete }) => {
               Description
             </th>
             <th className="px-6 py-4 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-              Coach
+              Lieu
+            </th>
+            <th className="px-6 py-4 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+              Statut
             </th>
             <th className="px-6 py-4 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
               Participants
@@ -51,11 +64,28 @@ const TrainingsTable = ({ trainings, onDelete }) => {
               <td className="px-6 py-4 whitespace-nowrap text-gray-300">
                 {training.time}
               </td>
-              <td className="px-6 py-4 text-gray-300">
+              <td className="px-6 py-4 text-gray-300 max-w-xs truncate">
                 {training.description}
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-gray-300">
-                {training.coach_name}
+                {training.location}
+              </td>
+              <td className="px-6 py-4 whitespace-nowrap">
+                <span
+                  className={`px-3 py-1 rounded-full text-xs font-medium ${
+                    training.status === 'completed'
+                      ? 'bg-green-500/10 text-green-500'
+                      : training.status === 'upcoming'
+                      ? 'bg-blue-500/10 text-blue-500'
+                      : 'bg-yellow-500/10 text-yellow-500'
+                  }`}
+                >
+                  {training.status === 'completed'
+                    ? 'Terminée'
+                    : training.status === 'upcoming'
+                    ? 'À venir'
+                    : 'En cours'}
+                </span>
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-gray-300">
                 {training.participants_count || 0}
@@ -69,13 +99,15 @@ const TrainingsTable = ({ trainings, onDelete }) => {
                   >
                     <Eye size={18} />
                   </button>
-                  <button
-                    onClick={() => onDelete(training.id)}
-                    className="p-2 text-red-500 hover:bg-red-500/10 rounded-lg transition"
-                    title="Supprimer"
-                  >
-                    <Trash2 size={18} />
-                  </button>
+                  {canManage && (
+                    <button
+                      onClick={() => handleDeleteWithAnnounce(training.id)}
+                      className="p-2 text-red-500 hover:bg-red-500/10 rounded-lg transition"
+                      title="Supprimer"
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  )}
                 </div>
               </td>
             </tr>

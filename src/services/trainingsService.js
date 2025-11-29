@@ -31,7 +31,7 @@ const trainingsService = {
     return response.data;
   },
 
-  // Enregistrer la présence
+  // Enregistrer la présence et les performances
   recordAttendance: async (trainingId, attendanceData) => {
     const response = await axiosInstance.post(
       `/trainings/${trainingId}/attendance`,

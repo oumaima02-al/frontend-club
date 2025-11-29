@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Mail, Lock, AlertCircle } from 'lucide-react';
@@ -9,53 +9,24 @@ const Login = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const { login, isAuthenticated, user } = useAuth();
+  const { login } = useAuth();
   const navigate = useNavigate();
-
-  // Rediriger si déjà authentifié
-  useEffect(() => {
-    if (isAuthenticated && user) {
-      console.log('🔄 Redirection automatique vers dashboard');
-      navigate('/dashboard', { replace: true });
-    }
-  }, [isAuthenticated, user, navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setLoading(true);
 
-    console.log('📝 Soumission formulaire login');
+    const result = await login(email, password);
 
-    try {
-      const result = await login(email, password);
-
-      if (result.success) {
-        console.log('🎉 Login réussi dans le composant');
-        // La redirection se fera automatiquement via le useEffect
-      } else {
-        console.log('❌ Échec login:', result.message);
-        setError(result.message);
-      }
-    } catch (err) {
-      console.error('💥 Erreur inattendue:', err);
-      setError('Une erreur inattendue est survenue');
-    } finally {
-      setLoading(false);
+    if (result.success) {
+      navigate('/dashboard');
+    } else {
+      setError(result.message || 'Email ou mot de passe incorrect');
     }
-  };
 
-  // Afficher le loading si déjà authentifié (en attente de redirection)
-  if (isAuthenticated) {
-    return (
-      <div className="min-h-screen bg-dark-900 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-neon-green mx-auto mb-4"></div>
-          <p className="text-white">Redirection vers le dashboard...</p>
-        </div>
-      </div>
-    );
-  }
+    setLoading(false);
+  };
 
   return (
     <div className="min-h-screen bg-dark-900 flex items-center justify-center px-4">
@@ -83,7 +54,7 @@ const Login = () => {
         {/* Form */}
         <form onSubmit={handleSubmit} className="card space-y-6">
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Email</label>
+            <label className="block text-sm font-medium text-gray-300 mb-2">Adresse email</label>
             <div className="relative">
               <Mail size={20} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500" />
               <input
@@ -91,9 +62,8 @@ const Login = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="input-field pl-10"
-                placeholder="admin@club.com"
+                placeholder="votre@email.com"
                 required
-                disabled={loading}
               />
             </div>
           </div>
@@ -109,33 +79,18 @@ const Login = () => {
                 className="input-field pl-10"
                 placeholder="••••••••"
                 required
-                disabled={loading}
               />
             </div>
           </div>
 
-          <button 
-            type="submit" 
-            disabled={loading}
-            className="w-full py-3 px-4 bg-neon-green text-black font-semibold rounded-lg hover:bg-green-400 focus:outline-none focus:ring-2 focus:ring-neon-green focus:ring-offset-2 focus:ring-offset-dark-900 transition disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {loading ? (
-              <div className="flex items-center justify-center">
-                <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-black mr-2"></div>
-                Connexion...
-              </div>
-            ) : (
-              'Se connecter'
-            )}
+          <button type="submit" disabled={loading} className="btn-primary w-full">
+            {loading ? 'Connexion en cours...' : 'Se connecter'}
           </button>
         </form>
 
         {/* Footer */}
-        <p className="text-center text-gray-400 mt-6">
-          Pas encore de compte ?{' '}
-          <Link to="/register" className="text-neon-green hover:underline">
-            S'inscrire
-          </Link>
+        <p className="text-center text-gray-400 mt-6 text-sm">
+          Vous n'avez pas de compte ? Contactez l'administrateur du club.
         </p>
 
         <Link to="/" className="block text-center text-gray-500 mt-4 hover:text-neon-green transition">

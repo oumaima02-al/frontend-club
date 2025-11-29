@@ -5,8 +5,10 @@ import PlayersTable from '../components/PlayersTable';
 import FileUpload from '../components/FileUpload';
 import { Plus, X, Search } from 'lucide-react';
 import playersService from '../services/playersService';
+import { useAuth } from '../context/AuthContext';
 
 const PlayersList = () => {
+  const { user } = useAuth();
   const [players, setPlayers] = useState([]);
   const [filteredPlayers, setFilteredPlayers] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -17,10 +19,13 @@ const PlayersList = () => {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
+    password: '',
+    password_confirmation: '',
     age: '',
     team: '',
     position: '',
     number: '',
+    phone: '',
     photo: null,
     cv: null,
   });
@@ -33,12 +38,11 @@ const PlayersList = () => {
   }, []);
 
   useEffect(() => {
-    // Filtrer les joueurs selon la recherche
     const filtered = players.filter(
       (player) =>
-        player.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        player.team.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        player.position.toLowerCase().includes(searchTerm.toLowerCase())
+        (player.name?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+        (player.team?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+        (player.position?.toLowerCase() || '').includes(searchTerm.toLowerCase())
     );
     setFilteredPlayers(filtered);
   }, [searchTerm, players]);
@@ -51,41 +55,6 @@ const PlayersList = () => {
       setFilteredPlayers(data);
     } catch (error) {
       console.error('Erreur lors du chargement des joueurs:', error);
-      // Données factices pour le développement
-      const fakePlayers = [
-        {
-          id: 1,
-          name: 'Jean Dupont',
-          email: 'jean@example.com',
-          age: 24,
-          team: 'U18 Masculin',
-          position: 'Attaquant',
-          number: 10,
-          photo: 'https://i.pravatar.cc/150?img=1',
-        },
-        {
-          id: 2,
-          name: 'Marie Martin',
-          email: 'marie@example.com',
-          age: 22,
-          team: 'Seniors Féminin',
-          position: 'Passeuse',
-          number: 5,
-          photo: 'https://i.pravatar.cc/150?img=5',
-        },
-        {
-          id: 3,
-          name: 'Pierre Lefebvre',
-          email: 'pierre@example.com',
-          age: 26,
-          team: 'Seniors Masculin',
-          position: 'Libéro',
-          number: 8,
-          photo: 'https://i.pravatar.cc/150?img=3',
-        },
-      ];
-      setPlayers(fakePlayers);
-      setFilteredPlayers(fakePlayers);
     } finally {
       setLoading(false);
     }
@@ -121,18 +90,25 @@ const PlayersList = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    if (!editingPlayer && formData.password !== formData.password_confirmation) {
+      alert('Les mots de passe ne correspondent pas');
+      return;
+    }
+
     try {
       const formDataToSend = new FormData();
       Object.keys(formData).forEach((key) => {
-        if (formData[key]) {
+        if (formData[key] && key !== 'password_confirmation') {
           formDataToSend.append(key, formData[key]);
         }
       });
 
       if (editingPlayer) {
         await playersService.updatePlayer(editingPlayer.id, formDataToSend);
+        alert('Joueur modifié avec succès');
       } else {
         await playersService.createPlayer(formDataToSend);
+        alert('Joueur créé avec succès');
       }
 
       fetchPlayers();
@@ -148,10 +124,13 @@ const PlayersList = () => {
     setFormData({
       name: player.name,
       email: player.email,
+      password: '',
+      password_confirmation: '',
       age: player.age,
       team: player.team,
       position: player.position,
       number: player.number,
+      phone: player.phone || '',
       photo: null,
       cv: null,
     });
@@ -164,9 +143,10 @@ const PlayersList = () => {
       try {
         await playersService.deletePlayer(id);
         fetchPlayers();
+        alert('Joueur supprimé avec succès');
       } catch (error) {
         console.error('Erreur lors de la suppression:', error);
-        alert('Erreur lors de la suppression du joueur');
+        alert(error.response?.data?.error || 'Erreur lors de la suppression du joueur');
       }
     }
   };
@@ -177,10 +157,13 @@ const PlayersList = () => {
     setFormData({
       name: '',
       email: '',
+      password: '',
+      password_confirmation: '',
       age: '',
       team: '',
       position: '',
       number: '',
+      phone: '',
       photo: null,
       cv: null,
     });
@@ -196,6 +179,16 @@ const PlayersList = () => {
     );
   }
 
+  // ✅ VÉRIFIER LES PERMISSIONS
+  const canAdd = user?.role === 'admin' || user?.role === 'coach';
+  const canEdit = user?.role === 'admin';
+  const canDelete = user?.role === 'admin';
+
+  // ✅ SI COACH, FILTRER PAR SON ÉQUIPE
+  const availableTeams = user?.role === 'coach' && user?.team
+    ? [user.team]
+    : ['U18 Masculin', 'Seniors Féminin', 'Seniors Masculin', 'U18 Féminin', 'U15 Masculin', 'U15 Féminin'];
+
   return (
     <div className="min-h-screen bg-dark-900">
       <Navbar />
@@ -207,11 +200,16 @@ const PlayersList = () => {
             <div>
               <h1 className="text-3xl font-bold text-white mb-2">Gestion des Joueurs</h1>
               <p className="text-gray-400">{players.length} joueurs enregistrés</p>
+              {user?.role === 'coach' && user?.team && (
+                <p className="text-neon-green text-sm">Équipe : {user.team}</p>
+              )}
             </div>
-            <button onClick={() => setShowModal(true)} className="btn-primary flex items-center space-x-2">
-              <Plus size={20} />
-              <span>Ajouter un joueur</span>
-            </button>
+            {canAdd && (
+              <button onClick={() => setShowModal(true)} className="btn-primary flex items-center space-x-2">
+                <Plus size={20} />
+                <span>Ajouter un joueur</span>
+              </button>
+            )}
           </div>
 
           {/* Search Bar */}
@@ -231,7 +229,12 @@ const PlayersList = () => {
           {/* Players Table */}
           <div className="card">
             {filteredPlayers.length > 0 ? (
-              <PlayersTable players={filteredPlayers} onDelete={handleDelete} onEdit={handleEdit} />
+              <PlayersTable
+                players={filteredPlayers}
+                onDelete={canDelete ? handleDelete : null}
+                onEdit={canEdit ? handleEdit : null}
+                canEdit={canEdit}
+              />
             ) : (
               <p className="text-gray-400 text-center py-8">Aucun joueur trouvé</p>
             )}
@@ -273,7 +276,7 @@ const PlayersList = () => {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Nom complet</label>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Nom complet *</label>
                   <input
                     type="text"
                     name="name"
@@ -285,7 +288,7 @@ const PlayersList = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Email</label>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Email *</label>
                   <input
                     type="email"
                     name="email"
@@ -296,8 +299,37 @@ const PlayersList = () => {
                   />
                 </div>
 
+                {!editingPlayer && (
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">Mot de passe *</label>
+                      <input
+                        type="password"
+                        name="password"
+                        value={formData.password}
+                        onChange={handleInputChange}
+                        className="input-field"
+                        required={!editingPlayer}
+                        placeholder="Minimum 6 caractères"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">Confirmer mot de passe *</label>
+                      <input
+                        type="password"
+                        name="password_confirmation"
+                        value={formData.password_confirmation}
+                        onChange={handleInputChange}
+                        className="input-field"
+                        required={!editingPlayer}
+                      />
+                    </div>
+                  </>
+                )}
+
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Âge</label>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Âge *</label>
                   <input
                     type="number"
                     name="age"
@@ -305,11 +337,13 @@ const PlayersList = () => {
                     onChange={handleInputChange}
                     className="input-field"
                     required
+                    min="10"
+                    max="100"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Numéro</label>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Numéro *</label>
                   <input
                     type="number"
                     name="number"
@@ -317,22 +351,42 @@ const PlayersList = () => {
                     onChange={handleInputChange}
                     className="input-field"
                     required
+                    min="1"
+                    max="99"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Équipe</label>
-                  <select name="team" value={formData.team} onChange={handleInputChange} className="input-field" required>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Téléphone</label>
+                  <input
+                    type="tel"
+                    name="phone"
+                    value={formData.phone}
+                    onChange={handleInputChange}
+                    className="input-field"
+                  />
+                </div>
+
+                {/* ✅ ÉQUIPE - Si coach, seulement son équipe */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Équipe *</label>
+                  <select
+                    name="team"
+                    value={formData.team}
+                    onChange={handleInputChange}
+                    className="input-field"
+                    required
+                    disabled={user?.role === 'coach'} // Coach ne peut pas changer l'équipe
+                  >
                     <option value="">Sélectionner une équipe</option>
-                    <option value="U18 Masculin">U18 Masculin</option>
-                    <option value="Seniors Féminin">Seniors Féminin</option>
-                    <option value="Seniors Masculin">Seniors Masculin</option>
-                    <option value="Vétérans Mixte">Vétérans Mixte</option>
+                    {availableTeams.map((team) => (
+                      <option key={team} value={team}>{team}</option>
+                    ))}
                   </select>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Poste</label>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Poste *</label>
                   <select name="position" value={formData.position} onChange={handleInputChange} className="input-field" required>
                     <option value="">Sélectionner un poste</option>
                     <option value="Attaquant">Attaquant</option>
@@ -340,6 +394,7 @@ const PlayersList = () => {
                     <option value="Central">Central</option>
                     <option value="Libéro">Libéro</option>
                     <option value="Réceptionneur-Attaquant">Réceptionneur-Attaquant</option>
+                    <option value="Pointu">Pointu</option>
                   </select>
                 </div>
               </div>
@@ -349,7 +404,7 @@ const PlayersList = () => {
                   Annuler
                 </button>
                 <button type="submit" className="btn-primary">
-                  {editingPlayer ? 'Mettre à jour' : 'Ajouter'}
+                  {editingPlayer ? 'Mettre à jour' : 'Créer le compte'}
                 </button>
               </div>
             </form>

@@ -189,4 +189,4 @@ const DashboardCoach = () => {
   );
 };
 
-export default DashboardCoach;
+export default DashboardCoach; 

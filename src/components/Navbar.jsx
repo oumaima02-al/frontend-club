@@ -45,13 +45,10 @@ const Navbar = ({ isLanding = false }) => {
               </a>
             </div>
 
-            {/* Auth Buttons */}
+            {/* Auth Button */}
             <div className="hidden md:flex items-center space-x-4">
-              <Link to="/login" className="text-gray-300 hover:text-neon-green transition">
+              <Link to="/login" className="btn-primary">
                 Se connecter
-              </Link>
-              <Link to="/register" className="btn-primary">
-                S'inscrire
               </Link>
             </div>
 
@@ -84,11 +81,8 @@ const Navbar = ({ isLanding = false }) => {
               <a href="#contact" className="block text-gray-300 hover:text-neon-green">
                 Contact
               </a>
-              <Link to="/login" className="block text-gray-300 hover:text-neon-green">
+              <Link to="/login" className="block btn-primary text-center">
                 Se connecter
-              </Link>
-              <Link to="/register" className="block btn-primary text-center">
-                S'inscrire
               </Link>
             </div>
           </div>

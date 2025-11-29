@@ -8,59 +8,47 @@ import {
   Trophy,
   Bell,
   User,
+  UserCog,
 } from 'lucide-react';
 
 const Sidebar = () => {
   const location = useLocation();
   const { user } = useAuth();
 
-  const menuItems = [
-    {
-      title: 'Dashboard',
-      icon: LayoutDashboard,
-      path: '/dashboard',
-      roles: ['admin', 'coach', 'player'],
-    },
-    {
-      title: 'Joueurs',
-      icon: Users,
-      path: '/players',
-      roles: ['admin'],
-    },
-    {
-      title: 'Entraînements',
-      icon: Calendar,
-      path: '/trainings',
-      roles: ['admin', 'coach'],
-    },
-    {
-      title: 'Matchs',
-      icon: Trophy,
-      path: '/matches',
-      roles: ['admin', 'coach', 'player'],
-    },
-    {
-      title: 'Notifications',
-      icon: Bell,
-      path: '/notifications',
-      roles: ['admin', 'coach', 'player'],
-    },
-    {
-      title: 'Profil',
-      icon: User,
-      path: '/profile',
-      roles: ['admin', 'coach', 'player'],
-    },
-  ];
+  // Configuration des menus selon les rôles
+  const menuConfig = {
+    admin: [
+      { title: 'Tableau de bord', icon: LayoutDashboard, path: '/dashboard' },
+      { title: 'Matchs', icon: Trophy, path: '/matches' },
+      { title: 'Coachs', icon: UserCog, path: '/coaches' },
+      { title: 'Joueurs', icon: Users, path: '/players' },
+      { title: 'Entraînements', icon: Calendar, path: '/trainings' },
+      { title: 'Notifications', icon: Bell, path: '/notifications' },
+      { title: 'Mon Profil', icon: User, path: '/profile' },
+    ],
+    coach: [
+      { title: 'Tableau de bord', icon: LayoutDashboard, path: '/dashboard' },
+      { title: 'Joueurs', icon: Users, path: '/players' },
+      { title: 'Entraînements', icon: Calendar, path: '/trainings' },
+      { title: 'Matchs', icon: Trophy, path: '/matches' },
+      { title: 'Notifications', icon: Bell, path: '/notifications' },
+      { title: 'Mon Profil', icon: User, path: '/profile' },
+    ],
+    player: [
+      { title: 'Tableau de bord', icon: LayoutDashboard, path: '/dashboard' },
+      { title: 'Matchs', icon: Trophy, path: '/matches' },
+      { title: 'Entraînements', icon: Calendar, path: '/trainings' },
+      { title: 'Notifications', icon: Bell, path: '/notifications' },
+      { title: 'Mon Profil', icon: User, path: '/profile' },
+    ],
+  };
 
-  const filteredMenu = menuItems.filter((item) =>
-    item.roles.includes(user?.role)
-  );
+  const menuItems = menuConfig[user?.role] || [];
 
   return (
     <aside className="fixed left-0 top-16 h-[calc(100vh-4rem)] w-64 bg-dark-800 border-r border-dark-700 p-4 overflow-y-auto">
       <nav className="space-y-2">
-        {filteredMenu.map((item) => {
+        {menuItems.map((item) => {
           const Icon = item.icon;
           const isActive = location.pathname === item.path;
 

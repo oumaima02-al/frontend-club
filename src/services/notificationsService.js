@@ -15,13 +15,19 @@ const notificationsService = {
 
   // Marquer comme lue
   markAsRead: async (id) => {
-    const response = await axiosInstance.put(`/notifications/${id}/read`);
+    const response = await axiosInstance.post(`/notifications/${id}/read`);
     return response.data;
   },
 
   // Supprimer une notification
   deleteNotification: async (id) => {
     const response = await axiosInstance.delete(`/notifications/${id}`);
+    return response.data;
+  },
+
+  // Obtenir le nombre de notifications non lues
+  getUnreadCount: async () => {
+    const response = await axiosInstance.get('/notifications/unread/count');
     return response.data;
   },
 };

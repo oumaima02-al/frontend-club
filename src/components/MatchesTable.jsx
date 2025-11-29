@@ -1,7 +1,7 @@
 import React from 'react';
-import { Trophy, Calendar } from 'lucide-react';
+import { Trophy, Calendar, Edit, Trash2, Bell } from 'lucide-react';
 
-const MatchesTable = ({ matches }) => {
+const MatchesTable = ({ matches, onEdit, onDelete }) => {
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('fr-FR', {
@@ -9,6 +9,16 @@ const MatchesTable = ({ matches }) => {
       month: 'long',
       year: 'numeric',
     });
+  };
+
+  const handleDeleteWithAnnounce = (id) => {
+    const shouldAnnounce = window.confirm(
+      'Voulez-vous notifier les membres de cette annulation ?\nCliquez sur "OK" pour notifier, "Annuler" pour supprimer sans notification.'
+    );
+    
+    if (shouldAnnounce !== null) {
+      onDelete(id, shouldAnnounce);
+    }
   };
 
   return (
@@ -34,6 +44,11 @@ const MatchesTable = ({ matches }) => {
             <th className="px-6 py-4 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
               Statut
             </th>
+            {(onEdit || onDelete) && (
+              <th className="px-6 py-4 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                Actions
+              </th>
+            )}
           </tr>
         </thead>
         <tbody className="divide-y divide-dark-700">
@@ -82,6 +97,30 @@ const MatchesTable = ({ matches }) => {
                     : 'En cours'}
                 </span>
               </td>
+              {(onEdit || onDelete) && (
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="flex items-center space-x-2">
+                    {onEdit && (
+                      <button
+                        onClick={() => onEdit(match)}
+                        className="p-2 text-neon-green hover:bg-neon-green/10 rounded-lg transition"
+                        title="Modifier"
+                      >
+                        <Edit size={18} />
+                      </button>
+                    )}
+                    {onDelete && (
+                      <button
+                        onClick={() => handleDeleteWithAnnounce(match.id)}
+                        className="p-2 text-red-500 hover:bg-red-500/10 rounded-lg transition"
+                        title="Supprimer"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    )}
+                  </div>
+                </td>
+              )}
             </tr>
           ))}
         </tbody>

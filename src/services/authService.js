@@ -1,15 +1,10 @@
 import axiosInstance from './axiosInstance';
 
+
 const authService = {
   // Connexion
   login: async (email, password) => {
     const response = await axiosInstance.post('/login', { email, password });
-    return response.data;
-  },
-
-  // Inscription
-  register: async (userData) => {
-    const response = await axiosInstance.post('/register', userData);
     return response.data;
   },
 
@@ -46,3 +41,4 @@ const authService = {
 };
 
 export default authService;
+// Supprimer toutes les fonctions d'inscription

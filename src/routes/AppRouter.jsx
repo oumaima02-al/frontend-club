@@ -6,7 +6,6 @@ import ProtectedRoute from './ProtectedRoute';
 // Pages publiques
 import LandingPage from '../pages/LandingPage';
 import Login from '../pages/Login';
-import Register from '../pages/Register';
 
 // Dashboards
 import DashboardAdmin from '../pages/DashboardAdmin';
@@ -14,6 +13,8 @@ import DashboardCoach from '../pages/DashboardCoach';
 import DashboardPlayer from '../pages/DashboardPlayer';
 
 // Pages protégées
+import CoachsList from '../pages/CoachesList';
+import CoachDetails from '../pages/CoachDetails';
 import PlayersList from '../pages/PlayersList';
 import PlayerDetails from '../pages/PlayerDetails';
 import TrainingsList from '../pages/TrainingsList';
@@ -23,11 +24,11 @@ import NotificationsPage from '../pages/NotificationsPage';
 import ProfilePage from '../pages/ProfilePage';
 
 const AppRouter = () => {
-  const { user, isAuthenticated } = useAuth();
+  const { user } = useAuth();
 
   // Composant pour rediriger vers le bon dashboard selon le rôle
   const DashboardRouter = () => {
-    if (!user) return <Navigate to="/login" replace />;
+    if (!user) return <Navigate to="/login" />;
 
     switch (user.role) {
       case 'admin':
@@ -37,16 +38,8 @@ const AppRouter = () => {
       case 'player':
         return <DashboardPlayer />;
       default:
-        return <Navigate to="/login" replace />;
+        return <Navigate to="/login" />;
     }
-  };
-
-  // Redirection conditionnelle pour les pages d'authentification
-  const PublicRoute = ({ children }) => {
-    if (isAuthenticated && user) {
-      return <Navigate to="/dashboard" replace />;
-    }
-    return children;
   };
 
   return (
@@ -54,23 +47,8 @@ const AppRouter = () => {
       <Routes>
         {/* Routes publiques */}
         <Route path="/" element={<LandingPage />} />
-        
-       <Route 
-          path="/login" 
-          element={
-            <PublicRoute>
-              <Login />
-            </PublicRoute>
-          } 
-        />
-        <Route 
-          path="/register" 
-          element={
-            <PublicRoute>
-              <Register />
-            </PublicRoute>
-          } 
-        />
+        <Route path="/login" element={<Login />} />
+
         {/* Dashboard (redirige selon le rôle) */}
         <Route
           path="/dashboard"
@@ -81,35 +59,51 @@ const AppRouter = () => {
           }
         />
 
-        {/* Gestion des joueurs (Admin seulement) */}
+        {/* Gestion des coachs (Admin seulement) */}
+        <Route
+          path="/coaches"
+          element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <CoachsList />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/coaches/:id"
+          element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <CoachDetails />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Gestion des joueurs (Admin + Coach) */}
         <Route
           path="/players"
           element={
-            <ProtectedRoute allowedRoles={['admin']}>
+            <ProtectedRoute allowedRoles={['admin', 'coach']}>
               <PlayersList />
             </ProtectedRoute>
           }
         />
-        
         <Route
           path="/players/:id"
           element={
-            <ProtectedRoute allowedRoles={['admin']}>
+            <ProtectedRoute>
               <PlayerDetails />
             </ProtectedRoute>
           }
         />
 
-        {/* Gestion des entraînements (Admin + Coach) */}
+        {/* Gestion des entraînements */}
         <Route
           path="/trainings"
           element={
-            <ProtectedRoute allowedRoles={['admin', 'coach']}>
+            <ProtectedRoute>
               <TrainingsList />
             </ProtectedRoute>
           }
         />
-        
         <Route
           path="/trainings/:id"
           element={
@@ -150,7 +144,7 @@ const AppRouter = () => {
         />
 
         {/* Redirection par défaut */}
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </Router>
   );

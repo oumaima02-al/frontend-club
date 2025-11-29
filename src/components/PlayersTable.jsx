@@ -2,7 +2,7 @@ import React from 'react';
 import { Eye, Edit, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-const PlayersTable = ({ players, onDelete, onEdit }) => {
+const PlayersTable = ({ players, onDelete, onEdit, canEdit }) => {
   const navigate = useNavigate();
 
   return (
@@ -63,24 +63,29 @@ const PlayersTable = ({ players, onDelete, onEdit }) => {
                   <button
                     onClick={() => navigate(`/players/${player.id}`)}
                     className="p-2 text-blue-500 hover:bg-blue-500/10 rounded-lg transition"
-                    title="Voir"
+                    title="Voir le profil"
                   >
                     <Eye size={18} />
                   </button>
-                  <button
-                    onClick={() => onEdit(player)}
-                    className="p-2 text-neon-green hover:bg-neon-green/10 rounded-lg transition"
-                    title="Modifier"
-                  >
-                    <Edit size={18} />
-                  </button>
-                  <button
-                    onClick={() => onDelete(player.id)}
-                    className="p-2 text-red-500 hover:bg-red-500/10 rounded-lg transition"
-                    title="Supprimer"
-                  >
-                    <Trash2 size={18} />
-                  </button>
+                  {/* ✅ SEUL L'ADMIN PEUT MODIFIER/SUPPRIMER */}
+                  {canEdit && onEdit && (
+                    <button
+                      onClick={() => onEdit(player)}
+                      className="p-2 text-neon-green hover:bg-neon-green/10 rounded-lg transition"
+                      title="Modifier"
+                    >
+                      <Edit size={18} />
+                    </button>
+                  )}
+                  {canEdit && onDelete && (
+                    <button
+                      onClick={() => onDelete(player.id)}
+                      className="p-2 text-red-500 hover:bg-red-500/10 rounded-lg transition"
+                      title="Supprimer"
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  )}
                 </div>
               </td>
             </tr>

@@ -6,11 +6,11 @@ import FileUpload from '../components/FileUpload';
 import { Plus, X, Search } from 'lucide-react';
 import playersService from '../services/playersService';
 import { useAuth } from '../context/AuthContext';
-import { useNotification } from '../context/NotificationContext';
+import { useToast } from '../context/ToastContext';
 
 const PlayersList = () => {
   const { user } = useAuth();
-  const { showSuccess, showError } = useNotification();
+  const { showToast } = useToast();
   const [players, setPlayers] = useState([]);
   const [filteredPlayers, setFilteredPlayers] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -151,12 +151,20 @@ const PlayersList = () => {
 
   // Validation
   if (!editingPlayer && formData.password !== formData.password_confirmation) {
+<<<<<<< HEAD
     showError('Les mots de passe ne correspondent pas');
+=======
+    showToast('Les mots de passe ne correspondent pas', 'error');
+>>>>>>> e6d4ebce90788d110170c10bddb9301346a8288f
     return;
   }
 
   if (!formData.name || !formData.email || !formData.age || !formData.team || !formData.position || !formData.number) {
+<<<<<<< HEAD
     showError('Veuillez remplir tous les champs obligatoires');
+=======
+    showToast('Veuillez remplir tous les champs obligatoires', 'error');
+>>>>>>> e6d4ebce90788d110170c10bddb9301346a8288f
     return;
   }
 
@@ -183,12 +191,20 @@ const PlayersList = () => {
       console.log('🔄 Updating player ID:', editingPlayer.id);
       const updateResult = await playersService.updatePlayer(editingPlayer.id, dataToSend);
       console.log('✅ Update result:', updateResult);
+<<<<<<< HEAD
       showSuccess('Joueur modifié avec succès');
+=======
+      showToast('Joueur modifié avec succès', 'success');
+>>>>>>> e6d4ebce90788d110170c10bddb9301346a8288f
     } else {
       console.log('🆕 Creating new player');
       const createResult = await playersService.createPlayer(dataToSend);
       console.log('✅ Create result:', createResult);
+<<<<<<< HEAD
       showSuccess('Joueur créé avec succès');
+=======
+      showToast('Joueur créé avec succès', 'success');
+>>>>>>> e6d4ebce90788d110170c10bddb9301346a8288f
     }
 
     fetchPlayers();
@@ -240,10 +256,17 @@ const PlayersList = () => {
       try {
         await playersService.deletePlayer(id);
         fetchPlayers();
+<<<<<<< HEAD
         showSuccess('Joueur supprimé avec succès');
       } catch (error) {
         console.error('Erreur lors de la suppression:', error);
         showError(error.response?.data?.error || 'Erreur lors de la suppression du joueur');
+=======
+        showToast('Joueur supprimé avec succès', 'success');
+      } catch (error) {
+        console.error('Erreur lors de la suppression:', error);
+        showToast(error.response?.data?.error || 'Erreur lors de la suppression du joueur', 'error');
+>>>>>>> e6d4ebce90788d110170c10bddb9301346a8288f
       }
     }
   };
@@ -277,10 +300,10 @@ const PlayersList = () => {
     );
   }
 
-  // ✅ Permissions: Admin can manage all players, Coach can manage players from their team
+  // ✅ Permissions: Admin can manage all players, Coach can manage players from their team but cannot delete
   const canAdd = user?.role === 'admin' || user?.role === 'coach';
   const canEdit = user?.role === 'admin' || user?.role === 'coach';
-  const canDelete = user?.role === 'admin' || user?.role === 'coach';
+  const canDelete = user?.role === 'admin'; // Only admin can delete players
 
   const availableTeams = user?.role === 'coach' && user?.team
     ? [user.team]
@@ -338,6 +361,7 @@ const PlayersList = () => {
                 onDelete={canDelete ? handleDelete : null}
                 onEdit={canEdit ? handleEdit : null}
                 canEdit={canEdit}
+                canDelete={canDelete}
               />
             ) : (
               <p className="text-gray-400 text-center py-8">Aucun joueur trouvé</p>

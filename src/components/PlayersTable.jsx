@@ -2,7 +2,7 @@ import React from 'react';
 import { Eye, Edit, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-const PlayersTable = ({ players, onDelete, onEdit, canEdit }) => {
+const PlayersTable = ({ players, onDelete, onEdit, canEdit, canDelete }) => {
   const navigate = useNavigate();
 
   return (
@@ -77,7 +77,7 @@ const PlayersTable = ({ players, onDelete, onEdit, canEdit }) => {
                       <Edit size={18} />
                     </button>
                   )}
-                  {canEdit && onDelete && (
+                  {canDelete && onDelete && (
                     <button
                       onClick={() => onDelete(player.id)}
                       className="p-2 text-red-500 hover:bg-red-500/10 rounded-lg transition"

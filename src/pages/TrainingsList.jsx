@@ -73,8 +73,9 @@ const TrainingsList = () => {
       if (formData.announce) {
         await notificationsService.createNotification({
           title: 'Nouvel entraînement planifié',
-          message: `Un entraînement a été planifié le ${new Date(formData.date).toLocaleDateString('fr-FR')} à ${formData.time}. Lieu: ${formData.location}`,
-          target: 'players',
+          message: `Un entraînement a été planifié le ${new Date(formData.date).toLocaleDateString('fr-FR')} de ${formData.start_time} à ${formData.end_time}. Lieu: ${formData.location}`,
+          target_role: 'player',
+          type: 'info',
         });
       }
 
@@ -102,8 +103,9 @@ const TrainingsList = () => {
         if (shouldAnnounce && training) {
           await notificationsService.createNotification({
             title: 'Entraînement annulé',
-            message: `L'entraînement du ${new Date(training.date).toLocaleDateString('fr-FR')} à ${training.time} a été annulé.`,
-            target: 'players',
+            message: `L'entraînement du ${new Date(training.date).toLocaleDateString('fr-FR')} de ${training.start_time} à ${training.end_time} a été annulé.`,
+            target_role: 'player',
+            type: 'warning',
           });
         }
 

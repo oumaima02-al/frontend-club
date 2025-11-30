@@ -23,9 +23,10 @@ const MatchesList = () => {
     location: '',
     our_score: '',
     opponent_score: '',
+    result: 'pending',
     status: 'scheduled',
     match_type: 'friendly',
-    announce: false,
+    notes: '',
   });
 
   useEffect(() => {
@@ -73,19 +74,20 @@ const MatchesList = () => {
         // Si annonce de modification et changement de statut
         if (formData.announce) {
           const statusText = {
-            upcoming: 'à venir',
-            in_progress: 'en cours',
+            scheduled: 'programmé',
             completed: 'terminé',
+            cancelled: 'annulé',
           };
 
           await notificationsService.createNotification({
             title: 'Mise à jour de match',
-            message: `Le match ${formData.team1} vs ${formData.team2} est maintenant "${statusText[formData.status]}".${
-              formData.status === 'completed' && formData.score1 && formData.score2
-                ? ` Score final: ${formData.score1} - ${formData.score2}`
+            message: `Le match contre ${formData.opponent_team} est maintenant "${statusText[formData.status]}".${
+              formData.status === 'completed' && formData.our_score && formData.opponent_score
+                ? ` Score final: ${formData.our_score} - ${formData.opponent_score}`
                 : ''
             }`,
-            target: 'all',
+            type: 'info',
+            target_role: 'all',
           });
         }
 
@@ -97,10 +99,11 @@ const MatchesList = () => {
         if (formData.announce) {
           await notificationsService.createNotification({
             title: 'Nouveau match planifié',
-            message: `Un match a été planifié: ${formData.team1} vs ${formData.team2} le ${new Date(
-              formData.date
-            ).toLocaleDateString('fr-FR')} à ${formData.time}. Lieu: ${formData.location}`,
-            target: 'all',
+            message: `Un match contre ${formData.opponent_team} a été planifié le ${new Date(
+              formData.match_date
+            ).toLocaleDateString('fr-FR')} à ${formData.match_time}. Lieu: ${formData.location}`,
+            type: 'info',
+            target_role: 'all',
           });
         }
 
@@ -124,9 +127,10 @@ const MatchesList = () => {
       location: match.location,
       our_score: match.our_score || match.score1 || '',
       opponent_score: match.opponent_score || match.score2 || '',
+      result: match.result || 'pending',
       status: match.status || 'scheduled',
       match_type: match.match_type || 'friendly',
-      announce: false,
+      notes: match.notes || '',
     });
     setShowModal(true);
   };
@@ -146,10 +150,11 @@ const MatchesList = () => {
         if (shouldAnnounce && match) {
           await notificationsService.createNotification({
             title: 'Match annulé',
-            message: `Le match ${match.team1} vs ${match.team2} prévu le ${new Date(
-              match.date
-            ).toLocaleDateString('fr-FR')} a été annulé.`,
-            target: 'all',
+            message: `Le match contre ${match.opponent_team} prévu le ${new Date(
+              match.match_date
+            ).toLocaleDateString('fr-FR')} à ${match.match_time} a été annulé.`,
+            type: 'warning',
+            target_role: 'all',
           });
         }
 
@@ -166,14 +171,16 @@ const MatchesList = () => {
     setShowModal(false);
     setEditingMatch(null);
     setFormData({
-      date: '',
-      time: '',
-      team1: '',
-      team2: '',
+      match_date: '',
+      match_time: '',
+      opponent_team: '',
       location: '',
-      score1: '',
-      score2: '',
-      status: 'upcoming',
+      our_score: '',
+      opponent_score: '',
+      result: 'pending',
+      status: 'scheduled',
+      match_type: 'friendly',
+      notes: '',
       announce: false,
     });
   };
@@ -318,6 +325,18 @@ const MatchesList = () => {
                   />
                 </div>
 
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Notes</label>
+                  <textarea
+                    name="notes"
+                    value={formData.notes}
+                    onChange={handleInputChange}
+                    className="input-field"
+                    placeholder="Informations supplémentaires sur le match..."
+                    rows="3"
+                  />
+                </div>
+
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">Statut</label>
                   <select
@@ -334,7 +353,19 @@ const MatchesList = () => {
                 </div>
 
                 <div>
-                  {/* Spacer */}
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Résultat</label>
+                  <select
+                    name="result"
+                    value={formData.result}
+                    onChange={handleInputChange}
+                    className="input-field"
+                    required
+                  >
+                    <option value="pending">En attente</option>
+                    <option value="win">Victoire</option>
+                    <option value="loss">Défaite</option>
+                    <option value="draw">Match nul</option>
+                  </select>
                 </div>
 
                 {formData.status === 'completed' && (

@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { NotificationProvider } from '../context/NotificationContext';
 import ProtectedRoute from './ProtectedRoute';
 
 // Pages publiques
@@ -43,8 +44,9 @@ const AppRouter = () => {
   };
 
   return (
-    <Router>
-      <Routes>
+    <NotificationProvider>
+      <Router>
+        <Routes>
         {/* Routes publiques */}
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<Login />} />
@@ -145,8 +147,9 @@ const AppRouter = () => {
 
         {/* Redirection par défaut */}
         <Route path="*" element={<Navigate to="/" />} />
-      </Routes>
-    </Router>
+        </Routes>
+      </Router>
+    </NotificationProvider>
   );
 };
 

@@ -15,13 +15,39 @@ const matchesService = {
 
   // Créer un nouveau match
   createMatch: async (matchData) => {
-    const response = await axiosInstance.post('/matches', matchData);
+    // Map frontend fields to backend expected fields
+    const backendData = {
+      opponent_team: matchData.opponent_team,
+      match_date: matchData.match_date,
+      match_time: matchData.match_time,
+      location: matchData.location,
+      match_type: matchData.match_type,
+      result: matchData.result || 'pending',
+      status: matchData.status || 'scheduled',
+      notes: matchData.notes || null,
+    };
+
+    const response = await axiosInstance.post('/matches', backendData);
     return response.data;
   },
 
   // Mettre à jour un match
   updateMatch: async (id, matchData) => {
-    const response = await axiosInstance.put(`/matches/${id}`, matchData);
+    // Map frontend fields to backend expected fields
+    const backendData = {
+      opponent_team: matchData.opponent_team,
+      match_date: matchData.match_date,
+      match_time: matchData.match_time,
+      location: matchData.location,
+      match_type: matchData.match_type,
+      our_score: matchData.our_score || null,
+      opponent_score: matchData.opponent_score || null,
+      result: matchData.result || 'pending',
+      status: matchData.status,
+      notes: matchData.notes || null,
+    };
+
+    const response = await axiosInstance.put(`/matches/${id}`, backendData);
     return response.data;
   },
 

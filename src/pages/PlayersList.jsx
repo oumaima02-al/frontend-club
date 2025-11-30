@@ -6,15 +6,18 @@ import FileUpload from '../components/FileUpload';
 import { Plus, X, Search } from 'lucide-react';
 import playersService from '../services/playersService';
 import { useAuth } from '../context/AuthContext';
+import { useNotification } from '../context/NotificationContext';
 
 const PlayersList = () => {
   const { user } = useAuth();
+  const { showSuccess, showError } = useNotification();
   const [players, setPlayers] = useState([]);
   const [filteredPlayers, setFilteredPlayers] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingPlayer, setEditingPlayer] = useState(null);
+
 
   // ✅ UNE SEULE PHOTO PAR DÉFAUT POUR TOUS LES JOUEURS
   const defaultPlayerPhoto = 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQKIRUzMjZZw7GkeTYxgRmXrU-7YR90CZfGxH75AJY5qrk42jQhjJaNmA7q160XlO1222w&usqp=CAU';
@@ -148,12 +151,12 @@ const PlayersList = () => {
 
   // Validation
   if (!editingPlayer && formData.password !== formData.password_confirmation) {
-    alert('Les mots de passe ne correspondent pas');
+    showError('Les mots de passe ne correspondent pas');
     return;
   }
 
   if (!formData.name || !formData.email || !formData.age || !formData.team || !formData.position || !formData.number) {
-    alert('Veuillez remplir tous les champs obligatoires');
+    showError('Veuillez remplir tous les champs obligatoires');
     return;
   }
 
@@ -180,12 +183,12 @@ const PlayersList = () => {
       console.log('🔄 Updating player ID:', editingPlayer.id);
       const updateResult = await playersService.updatePlayer(editingPlayer.id, dataToSend);
       console.log('✅ Update result:', updateResult);
-      alert('✅ Joueur modifié avec succès');
+      showSuccess('Joueur modifié avec succès');
     } else {
       console.log('🆕 Creating new player');
       const createResult = await playersService.createPlayer(dataToSend);
       console.log('✅ Create result:', createResult);
-      alert('✅ Joueur créé avec succès');
+      showSuccess('Joueur créé avec succès');
     }
 
     fetchPlayers();
@@ -205,7 +208,7 @@ const PlayersList = () => {
       errorMessage = error.response.data.message;
     }
     
-    alert(`❌ ${errorMessage}`);
+    showError(errorMessage);
   }
 };
 
@@ -237,10 +240,10 @@ const PlayersList = () => {
       try {
         await playersService.deletePlayer(id);
         fetchPlayers();
-        alert('Joueur supprimé avec succès');
+        showSuccess('Joueur supprimé avec succès');
       } catch (error) {
         console.error('Erreur lors de la suppression:', error);
-        alert(error.response?.data?.error || 'Erreur lors de la suppression du joueur');
+        showError(error.response?.data?.error || 'Erreur lors de la suppression du joueur');
       }
     }
   };
@@ -305,6 +308,13 @@ const PlayersList = () => {
               </button>
             )}
           </div>
+
+          {/* Message Display */}
+          {message && (
+            <div className={`mb-6 p-4 rounded-lg ${messageType === 'success' ? 'bg-green-500/20 border border-green-500 text-green-400' : 'bg-red-500/20 border border-red-500 text-red-400'}`}>
+              {message}
+            </div>
+          )}
 
           {/* Search Bar */}
           <div className="card mb-6">

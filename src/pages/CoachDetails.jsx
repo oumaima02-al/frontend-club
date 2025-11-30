@@ -2,14 +2,23 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Sidebar from '../components/Sidebar';
-import { ArrowLeft, Mail, Phone, Award, Calendar } from 'lucide-react';
+import { ArrowLeft, Mail, Phone, Award, Calendar, Users, BookOpen, TrendingUp } from 'lucide-react';
 import coachesService from '../services/coachesService';
+import trainingsService from '../services/trainingsService';
+import playersService from '../services/playersService';
 
 const CoachDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [coach, setCoach] = useState(null);
+  const [coachStats, setCoachStats] = useState({
+    playersCount: 0,
+    trainingsCount: 0,
+    avgAttendance: 0,
+    recentTrainings: []
+  });
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     fetchCoachDetails();
@@ -18,10 +27,40 @@ const CoachDetails = () => {
   const fetchCoachDetails = async () => {
     try {
       setLoading(true);
-      const data = await coachesService.getCoachById(id);
-      setCoach(data);
+      setError(null);
+
+      // Fetch coach basic data
+      const coachData = await coachesService.getCoachById(id);
+      setCoach(coachData);
+
+      // Fetch coach's trainings
+      const trainingsResponse = await trainingsService.getAllTrainings();
+      const coachTrainings = trainingsResponse.filter(training => training.coach_id == id);
+
+      // Fetch players in coach's team
+      const playersResponse = await playersService.getAllPlayers();
+      const teamPlayers = playersResponse.filter(player => player.team === coachData.team);
+
+      // Calculate stats
+      const avgAttendance = teamPlayers.length > 0
+        ? Math.round(teamPlayers.reduce((sum, player) => sum + (player.attendance_rate || 0), 0) / teamPlayers.length)
+        : 0;
+
+      // Get recent trainings (last 5)
+      const recentTrainings = coachTrainings
+        .sort((a, b) => new Date(b.date) - new Date(a.date))
+        .slice(0, 5);
+
+      setCoachStats({
+        playersCount: teamPlayers.length,
+        trainingsCount: coachTrainings.length,
+        avgAttendance: avgAttendance,
+        recentTrainings: recentTrainings
+      });
+
     } catch (error) {
       console.error('Erreur lors du chargement du coach:', error);
+      setError('Erreur lors du chargement des données du coach');
     } finally {
       setLoading(false);
     }
@@ -62,7 +101,7 @@ const CoachDetails = () => {
           <div className="card mb-8">
             <div className="flex flex-col md:flex-row items-start md:items-center space-y-4 md:space-y-0 md:space-x-6">
               <img
-                src={coach.photo || '/default-avatar.png'}
+                src={coach.photo || 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQKIRUzMjZZw7GkeTYxgRmXrU-7YR90CZfGxH75AJY5qrk42jQhjJaNmA7q160XlO1222w&usqp=CAU'}
                 alt={coach.name}
                 className="w-32 h-32 rounded-full object-cover border-4 border-neon-green"
               />
@@ -96,38 +135,61 @@ const CoachDetails = () => {
 
           {/* Stats Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <div className="card text-center">
-              <p className="text-gray-400 text-sm mb-2">Joueurs gérés</p>
-              <p className="text-3xl font-bold text-neon-green">{coach.players_count || 0}</p>
+            <div className="card">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-gray-400 text-sm mb-2">Joueurs gérés</p>
+                  <p className="text-3xl font-bold text-neon-green">{coachStats.playersCount}</p>
+                </div>
+                <div className="w-16 h-16 bg-neon-green/10 rounded-full flex items-center justify-center">
+                  <Users size={32} className="text-neon-green" />
+                </div>
+              </div>
             </div>
-            <div className="card text-center">
-              <p className="text-gray-400 text-sm mb-2">Entraînements créés</p>
-              <p className="text-3xl font-bold text-blue-500">{coach.trainings_count || 0}</p>
+            <div className="card">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-gray-400 text-sm mb-2">Entraînements créés</p>
+                  <p className="text-3xl font-bold text-blue-500">{coachStats.trainingsCount}</p>
+                </div>
+                <div className="w-16 h-16 bg-blue-500/10 rounded-full flex items-center justify-center">
+                  <BookOpen size={32} className="text-blue-500" />
+                </div>
+              </div>
             </div>
-            <div className="card text-center">
-              <p className="text-gray-400 text-sm mb-2">Taux de présence moyen</p>
-              <p className="text-3xl font-bold text-yellow-500">{coach.avg_attendance || 0}%</p>
+            <div className="card">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-gray-400 text-sm mb-2">Taux de présence moyen</p>
+                  <p className="text-3xl font-bold text-yellow-500">{coachStats.avgAttendance}%</p>
+                </div>
+                <div className="w-16 h-16 bg-yellow-500/10 rounded-full flex items-center justify-center">
+                  <TrendingUp size={32} className="text-yellow-500" />
+                </div>
+              </div>
             </div>
           </div>
 
-          {/* Recent Activities */}
+          {/* Recent Trainings */}
           <div className="card">
-            <h3 className="text-xl font-semibold text-white mb-6">Activités récentes</h3>
+            <h3 className="text-xl font-semibold text-white mb-6">Entraînements récents</h3>
             <div className="space-y-4">
-              {coach.recent_activities && coach.recent_activities.length > 0 ? (
-                coach.recent_activities.map((activity, index) => (
+              {coachStats.recentTrainings && coachStats.recentTrainings.length > 0 ? (
+                coachStats.recentTrainings.map((training, index) => (
                   <div key={index} className="bg-dark-700 rounded-lg p-4 flex items-center justify-between">
                     <div>
-                      <p className="text-white font-medium">{activity.title}</p>
-                      <p className="text-gray-400 text-sm">{activity.description}</p>
+                      <p className="text-white font-medium">{training.title || `Entraînement ${training.id}`}</p>
+                      <p className="text-gray-400 text-sm">
+                        {training.description || `Équipe: ${training.team || 'Non spécifiée'}`}
+                      </p>
                     </div>
                     <span className="text-gray-500 text-xs">
-                      {new Date(activity.date).toLocaleDateString('fr-FR')}
+                      {new Date(training.date).toLocaleDateString('fr-FR')}
                     </span>
                   </div>
                 ))
               ) : (
-                <p className="text-gray-400 text-center py-8">Aucune activité récente</p>
+                <p className="text-gray-400 text-center py-8">Aucun entraînement récent</p>
               )}
             </div>
           </div>

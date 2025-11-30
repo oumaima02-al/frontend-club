@@ -17,14 +17,14 @@ const MatchesList = () => {
   const [editingMatch, setEditingMatch] = useState(null);
 
   const [formData, setFormData] = useState({
-    date: '',
-    time: '',
-    team1: '',
-    team2: '',
+    match_date: '',
+    match_time: '',
+    opponent_team: '',
     location: '',
-    score1: '',
-    score2: '',
-    status: 'upcoming',
+    our_score: '',
+    opponent_score: '',
+    status: 'scheduled',
+    match_type: 'friendly',
     announce: false,
   });
 
@@ -35,8 +35,8 @@ const MatchesList = () => {
   useEffect(() => {
     const filtered = matches.filter(
       (match) =>
-        match.team1.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        match.team2.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (match.team1 || match.opponent_team || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (match.team2 || match.opponent_team || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
         match.location.toLowerCase().includes(searchTerm.toLowerCase())
     );
     setFilteredMatches(filtered);
@@ -118,14 +118,14 @@ const MatchesList = () => {
   const handleEdit = (match) => {
     setEditingMatch(match);
     setFormData({
-      date: match.date,
-      time: match.time || '',
-      team1: match.team1,
-      team2: match.team2,
+      match_date: match.match_date || match.date,
+      match_time: match.match_time || match.time || '',
+      opponent_team: match.opponent_team || match.team2 || '',
       location: match.location,
-      score1: match.score1 || '',
-      score2: match.score2 || '',
-      status: match.status || 'upcoming',
+      our_score: match.our_score || match.score1 || '',
+      opponent_score: match.opponent_score || match.score2 || '',
+      status: match.status || 'scheduled',
+      match_type: match.match_type || 'friendly',
       announce: false,
     });
     setShowModal(true);
@@ -256,8 +256,8 @@ const MatchesList = () => {
                   <label className="block text-sm font-medium text-gray-300 mb-2">Date *</label>
                   <input
                     type="date"
-                    name="date"
-                    value={formData.date}
+                    name="match_date"
+                    value={formData.match_date}
                     onChange={handleInputChange}
                     className="input-field"
                     required
@@ -268,8 +268,8 @@ const MatchesList = () => {
                   <label className="block text-sm font-medium text-gray-300 mb-2">Heure *</label>
                   <input
                     type="time"
-                    name="time"
-                    value={formData.time}
+                    name="match_time"
+                    value={formData.match_time}
                     onChange={handleInputChange}
                     className="input-field"
                     required
@@ -277,29 +277,32 @@ const MatchesList = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Équipe 1 *</label>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Équipe adverse *</label>
                   <input
                     type="text"
-                    name="team1"
-                    value={formData.team1}
-                    onChange={handleInputChange}
-                    className="input-field"
-                    placeholder="Ex: VolleyClub A"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Équipe 2 *</label>
-                  <input
-                    type="text"
-                    name="team2"
-                    value={formData.team2}
+                    name="opponent_team"
+                    value={formData.opponent_team}
                     onChange={handleInputChange}
                     className="input-field"
                     placeholder="Ex: Paris Volley"
                     required
                   />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Type de match</label>
+                  <select
+                    name="match_type"
+                    value={formData.match_type}
+                    onChange={handleInputChange}
+                    className="input-field"
+                    required
+                  >
+                    <option value="friendly">Amical</option>
+                    <option value="league">Championnat</option>
+                    <option value="cup">Coupe</option>
+                    <option value="tournament">Tournoi</option>
+                  </select>
                 </div>
 
                 <div className="md:col-span-2">
@@ -324,9 +327,9 @@ const MatchesList = () => {
                     className="input-field"
                     required
                   >
-                    <option value="upcoming">À venir</option>
-                    <option value="in_progress">En cours</option>
+                    <option value="scheduled">Programmé</option>
                     <option value="completed">Terminé</option>
+                    <option value="cancelled">Annulé</option>
                   </select>
                 </div>
 
@@ -337,11 +340,11 @@ const MatchesList = () => {
                 {formData.status === 'completed' && (
                   <>
                     <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">Score Équipe 1</label>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">Notre score</label>
                       <input
                         type="number"
-                        name="score1"
-                        value={formData.score1}
+                        name="our_score"
+                        value={formData.our_score}
                         onChange={handleInputChange}
                         className="input-field"
                         min="0"
@@ -350,11 +353,11 @@ const MatchesList = () => {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">Score Équipe 2</label>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">Score adverse</label>
                       <input
                         type="number"
-                        name="score2"
-                        value={formData.score2}
+                        name="opponent_score"
+                        value={formData.opponent_score}
                         onChange={handleInputChange}
                         className="input-field"
                         min="0"

@@ -73,37 +73,67 @@ const CoachsList = () => {
     }
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  // ✅ Remplacer la fonction handleSubmit dans CoachsList.jsx
 
-    if (!editingCoach && formData.password !== formData.password_confirmation) {
-      alert('Les mots de passe ne correspondent pas');
-      return;
+const handleSubmit = async (e) => {
+  e.preventDefault();
+
+  // ✅ Validation côté client
+  if (!editingCoach && formData.password !== formData.password_confirmation) {
+    alert('Les mots de passe ne correspondent pas');
+    return;
+  }
+
+  // ✅ Vérifier les champs requis
+  if (!formData.name || !formData.email || !formData.team) {
+    alert('Veuillez remplir tous les champs obligatoires');
+    return;
+  }
+
+  if (!editingCoach && !formData.password) {
+    alert('Le mot de passe est obligatoire');
+    return;
+  }
+
+  try {
+    // ✅ Préparer les données
+    const dataToSend = {
+      name: formData.name,
+      email: formData.email,
+      team: formData.team,
+      phone: formData.phone || '',
+      speciality: formData.speciality || '',
+      photo: formData.photo,
+    };
+
+    // ✅ Ajouter le password seulement pour la création
+    if (!editingCoach) {
+      dataToSend.password = formData.password;
     }
 
-    try {
-      const formDataToSend = new FormData();
-      Object.keys(formData).forEach((key) => {
-        if (formData[key] && key !== 'password_confirmation') {
-          formDataToSend.append(key, formData[key]);
-        }
-      });
+    console.log('📝 Données coach à envoyer:', dataToSend);
 
-      if (editingCoach) {
-        await coachesService.updateCoach(editingCoach.id, formDataToSend);
-        alert('Coach modifié avec succès');
-      } else {
-        await coachesService.createCoach(formDataToSend);
-        alert('Coach créé avec succès');
-      }
-
-      fetchCoaches();
-      closeModal();
-    } catch (error) {
-      console.error('Erreur lors de la sauvegarde:', error);
-      alert('Erreur lors de la sauvegarde du coach');
+    if (editingCoach) {
+      await coachesService.updateCoach(editingCoach.id, dataToSend);
+      alert('Coach modifié avec succès');
+    } else {
+      await coachesService.createCoach(dataToSend);
+      alert('Coach créé avec succès');
     }
-  };
+
+    fetchCoaches();
+    closeModal();
+  } catch (error) {
+    console.error('❌ Erreur lors de la sauvegarde:', error);
+    console.error('❌ Détails:', error.response?.data);
+    
+    const errorMessage = error.response?.data?.details 
+      ? JSON.stringify(error.response.data.details) 
+      : error.response?.data?.error || 'Erreur lors de la sauvegarde du coach';
+    
+    alert(errorMessage);
+  }
+};
 
   const handleEdit = (coach) => {
     setEditingCoach(coach);
@@ -225,7 +255,7 @@ const CoachsList = () => {
                     <tr key={coach.id} className="hover:bg-dark-700/50 transition">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <img
-                          src={coach.photo || '/default-avatar.png'}
+                          src={coach.photo || 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQKIRUzMjZZw7GkeTYxgRmXrU-7YR90CZfGxH75AJY5qrk42jQhjJaNmA7q160XlO1222w&usqp=CAU'}
                           alt={coach.name}
                           className="w-10 h-10 rounded-full object-cover"
                         />

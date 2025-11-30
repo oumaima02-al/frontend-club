@@ -16,6 +16,18 @@ const PlayersList = () => {
   const [showModal, setShowModal] = useState(false);
   const [editingPlayer, setEditingPlayer] = useState(null);
 
+  // ✅ UNE SEULE PHOTO PAR DÉFAUT POUR TOUS LES JOUEURS
+  const defaultPlayerPhoto = 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQKIRUzMjZZw7GkeTYxgRmXrU-7YR90CZfGxH75AJY5qrk42jQhjJaNmA7q160XlO1222w&usqp=CAU';
+
+  // ✅ Photos optionnelles pour la galerie (mais par défaut on utilise la même)
+  const optionalPlayerPhotos = [
+    'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQKIRUzMjZZw7GkeTYxgRmXrU-7YR90CZfGxH75AJY5qrk42jQhjJaNmA7q160XlO1222w&usqp=CAU',
+    'https://media.istockphoto.com/id/472117493/fr/photo/jeune-volley-ball-joueur-en-action.jpg',
+    'https://media.istockphoto.com/id/1306125679/fr/photo/jeune-joueur-de-volley-ball-en-action.jpg',
+    'https://media.istockphoto.com/id/1322196647/fr/photo/joueur-de-volley-ball-en-action.jpg',
+    'https://media.istockphoto.com/id/1397190654/fr/photo/joueur-de-volley-ball-sautant-pour-une-attaque.jpg'
+  ];
+
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -26,14 +38,36 @@ const PlayersList = () => {
     position: '',
     number: '',
     phone: '',
-    photo: null,
+    photo: defaultPlayerPhoto, // ✅ Photo par défaut direct
     cv: null,
   });
 
-  const [photoPreview, setPhotoPreview] = useState('');
+  const [photoPreview, setPhotoPreview] = useState(defaultPlayerPhoto); // ✅ Preview avec photo par défaut
   const [cvPreview, setCvPreview] = useState('');
+  const [showPhotoGallery, setShowPhotoGallery] = useState(false);
 
   useEffect(() => {
+    const fetchPlayers = async () => {
+      try {
+        setLoading(true);
+        const data = await playersService.getAllPlayers();
+        console.log('📥 Players received:', data);
+        
+        // ✅ TOUS les joueurs reçoivent la même photo par défaut s'ils n'en ont pas
+        const playersWithDefaultPhotos = data.map(player => ({
+          ...player,
+          photo: player.photo || defaultPlayerPhoto
+        }));
+        
+        setPlayers(playersWithDefaultPhotos);
+        setFilteredPlayers(playersWithDefaultPhotos);
+      } catch (error) {
+        console.error('❌ Error:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
     fetchPlayers();
   }, []);
 
@@ -51,8 +85,15 @@ const PlayersList = () => {
     try {
       setLoading(true);
       const data = await playersService.getAllPlayers();
-      setPlayers(data);
-      setFilteredPlayers(data);
+      
+      // ✅ Même traitement - tous avec la même photo par défaut
+      const playersWithDefaultPhotos = data.map(player => ({
+        ...player,
+        photo: player.photo || defaultPlayerPhoto
+      }));
+      
+      setPlayers(playersWithDefaultPhotos);
+      setFilteredPlayers(playersWithDefaultPhotos);
     } catch (error) {
       console.error('Erreur lors du chargement des joueurs:', error);
     } finally {
@@ -74,7 +115,7 @@ const PlayersList = () => {
       reader.onloadend = () => setPhotoPreview(reader.result);
       reader.readAsDataURL(file);
     } else {
-      setPhotoPreview('');
+      setPhotoPreview(defaultPlayerPhoto); // ✅ Retour à la photo par défaut
     }
   };
 
@@ -87,56 +128,103 @@ const PlayersList = () => {
     }
   };
 
+  // ✅ Fonction pour utiliser la photo par défaut
+  const useDefaultPhoto = () => {
+    setPhotoPreview(defaultPlayerPhoto);
+    setFormData({ ...formData, photo: defaultPlayerPhoto });
+  };
+
+  // ✅ Fonction pour sélectionner une photo spécifique
+  const selectPhoto = (photoUrl) => {
+    setPhotoPreview(photoUrl);
+    setFormData({ ...formData, photo: photoUrl });
+    setShowPhotoGallery(false);
+  };
+
   const handleSubmit = async (e) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    if (!editingPlayer && formData.password !== formData.password_confirmation) {
-      alert('Les mots de passe ne correspondent pas');
-      return;
+  console.log('🔄 handleSubmit called');
+
+  // Validation
+  if (!editingPlayer && formData.password !== formData.password_confirmation) {
+    alert('Les mots de passe ne correspondent pas');
+    return;
+  }
+
+  if (!formData.name || !formData.email || !formData.age || !formData.team || !formData.position || !formData.number) {
+    alert('Veuillez remplir tous les champs obligatoires');
+    return;
+  }
+
+  try {
+    const dataToSend = {
+      name: formData.name,
+      email: formData.email,
+      age: parseInt(formData.age),
+      team: formData.team,
+      position: formData.position,
+      number: parseInt(formData.number),
+      phone: formData.phone || '',
+      photo: formData.photo,
+      cv: formData.cv,
+    };
+
+    console.log('📤 Preparing to send:', dataToSend);
+
+    if (editingPlayer) {
+      console.log('🔄 Updating player ID:', editingPlayer.id);
+      await playersService.updatePlayer(editingPlayer.id, dataToSend);
+      alert('✅ Joueur modifié avec succès');
+    } else {
+      console.log('🆕 Creating new player');
+      await playersService.createPlayer(dataToSend);
+      alert('✅ Joueur créé avec succès');
     }
 
-    try {
-      const formDataToSend = new FormData();
-      Object.keys(formData).forEach((key) => {
-        if (formData[key] && key !== 'password_confirmation') {
-          formDataToSend.append(key, formData[key]);
-        }
-      });
-
-      if (editingPlayer) {
-        await playersService.updatePlayer(editingPlayer.id, formDataToSend);
-        alert('Joueur modifié avec succès');
-      } else {
-        await playersService.createPlayer(formDataToSend);
-        alert('Joueur créé avec succès');
-      }
-
-      fetchPlayers();
-      closeModal();
-    } catch (error) {
-      console.error('Erreur lors de la sauvegarde:', error);
-      alert('Erreur lors de la sauvegarde du joueur');
+    fetchPlayers();
+    closeModal();
+  } catch (error) {
+    console.error('❌ Full error:', error);
+    console.error('❌ Error status:', error.response?.status);
+    console.error('❌ Error data:', error.response?.data);
+    
+    let errorMessage = 'Erreur lors de la sauvegarde';
+    
+    if (error.response?.status === 405) {
+      errorMessage = 'Erreur 405: Méthode non autorisée. Le serveur refuse la requête.';
+    } else if (error.response?.data?.errors) {
+      errorMessage = Object.values(error.response.data.errors).flat().join(', ');
+    } else if (error.response?.data?.message) {
+      errorMessage = error.response.data.message;
     }
-  };
+    
+    alert(`❌ ${errorMessage}`);
+  }
+};
 
-  const handleEdit = (player) => {
-    setEditingPlayer(player);
-    setFormData({
-      name: player.name,
-      email: player.email,
-      password: '',
-      password_confirmation: '',
-      age: player.age,
-      team: player.team,
-      position: player.position,
-      number: player.number,
-      phone: player.phone || '',
-      photo: null,
-      cv: null,
-    });
-    setPhotoPreview(player.photo || '');
-    setShowModal(true);
-  };
+ const handleEdit = (player) => {
+  console.log('🔄 handleEdit called with player:', player);
+  
+  setEditingPlayer(player);
+  setFormData({
+    name: player.name,
+    email: player.email,
+    password: '',
+    password_confirmation: '',
+    age: player.age,
+    team: player.team,
+    position: player.position,
+    number: player.number,
+    phone: player.phone || '',
+    photo: player.photo || defaultPlayerPhoto,
+    cv: null,
+  });
+  setPhotoPreview(player.photo || defaultPlayerPhoto);
+  setShowModal(true);
+  
+  console.log('✅ Modal should open now');
+};
 
   const handleDelete = async (id) => {
     if (window.confirm('Êtes-vous sûr de vouloir supprimer ce joueur ?')) {
@@ -153,6 +241,7 @@ const PlayersList = () => {
 
   const closeModal = () => {
     setShowModal(false);
+    setShowPhotoGallery(false);
     setEditingPlayer(null);
     setFormData({
       name: '',
@@ -164,10 +253,10 @@ const PlayersList = () => {
       position: '',
       number: '',
       phone: '',
-      photo: null,
+      photo: defaultPlayerPhoto, // ✅ Retour à la photo par défaut
       cv: null,
     });
-    setPhotoPreview('');
+    setPhotoPreview(defaultPlayerPhoto); // ✅ Retour à la photo par défaut
     setCvPreview('');
   };
 
@@ -179,12 +268,10 @@ const PlayersList = () => {
     );
   }
 
-  // ✅ VÉRIFIER LES PERMISSIONS
   const canAdd = user?.role === 'admin' || user?.role === 'coach';
   const canEdit = user?.role === 'admin';
   const canDelete = user?.role === 'admin';
 
-  // ✅ SI COACH, FILTRER PAR SON ÉQUIPE
   const availableTeams = user?.role === 'coach' && user?.team
     ? [user.team]
     : ['U18 Masculin', 'Seniors Féminin', 'Seniors Masculin', 'U18 Féminin', 'U15 Masculin', 'U15 Féminin'];
@@ -245,7 +332,7 @@ const PlayersList = () => {
       {/* Modal Add/Edit Player */}
       {showModal && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4 overflow-y-auto">
-          <div className="bg-dark-800 rounded-xl max-w-2xl w-full my-8">
+          <div className="bg-dark-800 rounded-xl max-w-4xl w-full my-8 max-h-[90vh] overflow-hidden">
             <div className="flex items-center justify-between p-6 border-b border-dark-700">
               <h2 className="text-2xl font-bold text-white">
                 {editingPlayer ? 'Modifier le joueur' : 'Ajouter un joueur'}
@@ -255,17 +342,7 @@ const PlayersList = () => {
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="p-6 space-y-6">
-              {/* Photo Upload */}
-              <FileUpload
-                label="Photo du joueur"
-                accept="image/*"
-                onChange={handlePhotoChange}
-                preview={photoPreview}
-                type="image"
-              />
-
-              {/* CV Upload */}
+            <form onSubmit={handleSubmit} className="p-6 space-y-6 overflow-y-auto max-h-[70vh]">
               <FileUpload
                 label="CV (PDF)"
                 accept=".pdf"
@@ -275,6 +352,7 @@ const PlayersList = () => {
               />
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* ... Les autres champs du formulaire ... */}
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">Nom complet *</label>
                   <input
@@ -367,7 +445,6 @@ const PlayersList = () => {
                   />
                 </div>
 
-                {/* ✅ ÉQUIPE - Si coach, seulement son équipe */}
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">Équipe *</label>
                   <select
@@ -376,7 +453,7 @@ const PlayersList = () => {
                     onChange={handleInputChange}
                     className="input-field"
                     required
-                    disabled={user?.role === 'coach'} // Coach ne peut pas changer l'équipe
+                    disabled={user?.role === 'coach'}
                   >
                     <option value="">Sélectionner une équipe</option>
                     {availableTeams.map((team) => (

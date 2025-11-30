@@ -57,25 +57,25 @@ const MatchesTable = ({ matches, onEdit, onDelete }) => {
               <td className="px-6 py-4 whitespace-nowrap">
                 <div className="flex items-center space-x-2">
                   <Calendar size={16} className="text-neon-green" />
-                  <span className="text-white">{formatDate(match.date)}</span>
+                  <span className="text-white">{formatDate(match.match_date)}</span>
                 </div>
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-white font-medium">
-                {match.team1}
+                Notre équipe
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-center">
                 <div className="flex items-center justify-center space-x-2">
                   <span className="text-2xl font-bold text-neon-green">
-                    {match.score1 ?? '-'}
+                    {match.our_score ?? '-'}
                   </span>
                   <span className="text-gray-500">:</span>
                   <span className="text-2xl font-bold text-neon-green">
-                    {match.score2 ?? '-'}
+                    {match.opponent_score ?? '-'}
                   </span>
                 </div>
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-white font-medium">
-                {match.team2}
+                {match.opponent_team}
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-gray-300">
                 {match.location}

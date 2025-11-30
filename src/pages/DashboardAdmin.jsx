@@ -3,45 +3,13 @@ import Navbar from '../components/Navbar';
 import Sidebar from '../components/Sidebar';
 import StatsCard from '../components/StatsCard';
 import BarChartComponent from '../components/Charts/BarChartComponent';
-import LineChartComponent from '../components/Charts/LineChartComponent';
 import PieChartComponent from '../components/Charts/PieChartComponent';
-import MatchesTable from '../components/MatchesTable';
 import { Users, Calendar, Trophy, TrendingUp } from 'lucide-react';
 import statsService from '../services/statsService';
-import matchesService from '../services/matchesService';
 
 const DashboardAdmin = () => {
-  const [stats, setStats] = useState({
-    totalPlayers: 0,
-    totalTrainings: 0,
-    totalMatches: 0,
-    attendanceRate: 0,
-  });
-  const [matches, setMatches] = useState([]);
+  const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
-
-  // Données factices pour les graphiques (à remplacer par vraies données API)
-  const playersPerTeamData = [
-    { name: 'U18 Masculin', joueurs: 15 },
-    { name: 'Seniors Féminin', joueurs: 18 },
-    { name: 'Vétérans Mixte', joueurs: 12 },
-    { name: 'U15 Féminin', joueurs: 14 },
-  ];
-
-  const attendanceEvolutionData = [
-    { mois: 'Sep', taux: 85 },
-    { mois: 'Oct', taux: 88 },
-    { mois: 'Nov', taux: 82 },
-    { mois: 'Déc', taux: 90 },
-    { mois: 'Jan', taux: 87 },
-    { mois: 'Fév', taux: 91 },
-  ];
-
-  const rolesDistributionData = [
-    { name: 'Joueurs', value: 45 },
-    { name: 'Coaches', value: 5 },
-    { name: 'Admins', value: 2 },
-  ];
 
   useEffect(() => {
     fetchDashboardData();
@@ -50,22 +18,8 @@ const DashboardAdmin = () => {
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
-      
-      // Récupérer les statistiques globales
-      // const globalStats = await statsService.getGlobalStats();
-      // setStats(globalStats);
-
-      // Récupérer les derniers matchs
-      const matchesData = await matchesService.getAllMatches();
-      setMatches(matchesData.slice(0, 5)); // Les 5 derniers
-
-      // Données factices en attendant l'API
-      setStats({
-        totalPlayers: 52,
-        totalTrainings: 128,
-        totalMatches: 24,
-        attendanceRate: 87,
-      });
+      const data = await statsService.getAdminStats();
+      setStats(data);
     } catch (error) {
       console.error('Erreur lors du chargement des données:', error);
     } finally {
@@ -80,6 +34,26 @@ const DashboardAdmin = () => {
       </div>
     );
   }
+
+  if (!stats) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-dark-900">
+        <p className="text-white">Erreur de chargement des statistiques</p>
+      </div>
+    );
+  }
+
+  // Données pour les graphiques
+  const playersPerTeamData = stats.teams.map(team => ({
+    name: team.name,
+    joueurs: team.players
+  }));
+
+  const rolesDistributionData = [
+    { name: 'Joueurs', value: stats.users.players },
+    { name: 'Coaches', value: stats.users.coaches },
+    { name: 'Admins', value: stats.users.admins },
+  ];
 
   return (
     <div className="min-h-screen bg-dark-900">
@@ -97,31 +71,27 @@ const DashboardAdmin = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             <StatsCard
               title="Total Joueurs"
-              value={stats.totalPlayers}
+              value={stats.players.total}
               icon={Users}
               color="neon-green"
-              trend={8}
             />
             <StatsCard
               title="Séances d'entraînement"
-              value={stats.totalTrainings}
+              value={stats.trainings.total}
               icon={Calendar}
               color="blue-500"
-              trend={12}
             />
             <StatsCard
               title="Matchs"
-              value={stats.totalMatches}
+              value={stats.matches.total}
               icon={Trophy}
               color="yellow-500"
-              trend={5}
             />
             <StatsCard
               title="Taux de présence"
-              value={`${stats.attendanceRate}%`}
+              value={`${stats.attendance.overall_rate}%`}
               icon={TrendingUp}
               color="green-500"
-              trend={3}
             />
           </div>
 
@@ -133,63 +103,84 @@ const DashboardAdmin = () => {
               xKey="name"
               title="Nombre de joueurs par équipe"
             />
-            <LineChartComponent
-              data={attendanceEvolutionData}
-              dataKey="taux"
-              xKey="mois"
-              title="Évolution du taux de présence"
+            <PieChartComponent 
+              data={rolesDistributionData} 
+              title="Répartition des rôles" 
             />
           </div>
 
-          {/* Charts Row 2 */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-            <PieChartComponent data={rolesDistributionData} title="Répartition des rôles" />
-            
-            {/* Quick Actions */}
+          {/* Stats Details */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+            {/* Players Status */}
             <div className="card">
-              <h3 className="text-xl font-semibold text-white mb-6">Actions rapides</h3>
-              <div className="space-y-4">
-                <button
-                  onClick={() => (window.location.href = '/players')}
-                  className="w-full btn-primary text-left flex items-center justify-between"
-                >
-                  <span>Gérer les joueurs</span>
-                  <Users size={20} />
-                </button>
-                <button
-                  onClick={() => (window.location.href = '/trainings')}
-                  className="w-full btn-secondary text-left flex items-center justify-between"
-                >
-                  <span>Planifier un entraînement</span>
-                  <Calendar size={20} />
-                </button>
-                <button
-                  onClick={() => (window.location.href = '/matches')}
-                  className="w-full btn-secondary text-left flex items-center justify-between"
-                >
-                  <span>Ajouter un match</span>
-                  <Trophy size={20} />
-                </button>
+              <h3 className="text-xl font-semibold text-white mb-4">Statut des joueurs</h3>
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-400">Actifs</span>
+                  <span className="text-green-500 font-semibold">{stats.players.active}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-400">Blessés</span>
+                  <span className="text-yellow-500 font-semibold">{stats.players.injured}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-400">Suspendus</span>
+                  <span className="text-red-500 font-semibold">{stats.players.suspended}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Trainings Status */}
+            <div className="card">
+              <h3 className="text-xl font-semibold text-white mb-4">Entraînements</h3>
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-400">Planifiés</span>
+                  <span className="text-blue-500 font-semibold">{stats.trainings.scheduled}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-400">Terminés</span>
+                  <span className="text-green-500 font-semibold">{stats.trainings.completed}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-400">Annulés</span>
+                  <span className="text-red-500 font-semibold">{stats.trainings.cancelled}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Matches Status */}
+            <div className="card">
+              <h3 className="text-xl font-semibold text-white mb-4">Matchs</h3>
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-400">Victoires</span>
+                  <span className="text-green-500 font-semibold">{stats.matches.wins}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-400">Défaites</span>
+                  <span className="text-red-500 font-semibold">{stats.matches.losses}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-400">Nuls</span>
+                  <span className="text-yellow-500 font-semibold">{stats.matches.draws}</span>
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Recent Matches */}
+          {/* Teams Overview */}
           <div className="card">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-semibold text-white">Derniers matchs</h3>
-              <button
-                onClick={() => (window.location.href = '/matches')}
-                className="text-neon-green hover:underline text-sm"
-              >
-                Voir tout
-              </button>
+            <h3 className="text-xl font-semibold text-white mb-6">Vue d'ensemble des équipes</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {stats.teams.map((team, index) => (
+                <div key={index} className="bg-dark-700 rounded-lg p-4">
+                  <h4 className="text-white font-semibold mb-2">{team.name}</h4>
+                  <p className="text-gray-400 text-sm mb-1">Coach: {team.coach}</p>
+                  <p className="text-neon-green font-bold">{team.players} joueurs</p>
+                </div>
+              ))}
             </div>
-            {matches.length > 0 ? (
-              <MatchesTable matches={matches} />
-            ) : (
-              <p className="text-gray-400 text-center py-8">Aucun match enregistré</p>
-            )}
           </div>
         </main>
       </div>
@@ -197,4 +188,4 @@ const DashboardAdmin = () => {
   );
 };
 
-export default DashboardAdmin; 
+export default DashboardAdmin;

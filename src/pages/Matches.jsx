@@ -1,17 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../contexts/AuthContext';
-import ProtectedRoute from '../components/ProtectedRoute';
-import { matchService } from '../services/matchesService';
+import { useAuth } from '../context/AuthContext';
+import ProtectedRoute from '../routes/ProtectedRoute';
+import matchesService from '../services/matchesService';
 
 const Matches = () => {
   const [matches, setMatches] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
   const [formData, setFormData] = useState({
-    opponent: '',
-    date: '',
+    opponent_team: '',
+    match_date: '',
+    match_time: '',
     location: '',
-    type: 'amical'
+    match_type: 'friendly'
   });
 
   const { user, hasRole } = useAuth();
@@ -34,12 +35,20 @@ const Matches = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await matchService.create(formData);
+      const matchData = {
+        opponent_team: formData.opponent_team,
+        match_date: formData.match_date,
+        match_time: formData.match_time,
+        location: formData.location,
+        match_type: formData.match_type
+      };
+      await matchesService.createMatch(matchData);
       setShowAddForm(false);
-      setFormData({ opponent: '', date: '', location: '', type: 'amical' });
+      setFormData({ opponent_team: '', match_date: '', match_time: '', location: '', match_type: 'friendly' });
       loadMatches();
     } catch (error) {
       console.error('Erreur lors de l\'ajout du match:', error);
+      alert('Erreur lors de l\'ajout du match: ' + (error.response?.data?.message || error.message));
     }
   };
 
@@ -99,8 +108,8 @@ const Matches = () => {
                     </label>
                     <input
                       type="text"
-                      name="opponent"
-                      value={formData.opponent}
+                      name="opponent_team"
+                      value={formData.opponent_team}
                       onChange={handleChange}
                       required
                       className="w-full px-3 py-2 bg-gray-600 border border-gray-500 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500"
@@ -109,12 +118,25 @@ const Matches = () => {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Date et heure
+                      Date
                     </label>
                     <input
-                      type="datetime-local"
-                      name="date"
-                      value={formData.date}
+                      type="date"
+                      name="match_date"
+                      value={formData.match_date}
+                      onChange={handleChange}
+                      required
+                      className="w-full px-3 py-2 bg-gray-600 border border-gray-500 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-green-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                      Heure
+                    </label>
+                    <input
+                      type="time"
+                      name="match_time"
+                      value={formData.match_time}
                       onChange={handleChange}
                       required
                       className="w-full px-3 py-2 bg-gray-600 border border-gray-500 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-green-500"
@@ -134,19 +156,19 @@ const Matches = () => {
                       placeholder="Lieu du match"
                     />
                   </div>
-                  <div>
+                  <div className="md:col-span-2">
                     <label className="block text-sm font-medium text-gray-300 mb-2">
                       Type de match
                     </label>
                     <select
-                      name="type"
-                      value={formData.type}
+                      name="match_type"
+                      value={formData.match_type}
                       onChange={handleChange}
                       className="w-full px-3 py-2 bg-gray-600 border border-gray-500 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-green-500"
                     >
-                      <option value="amical">Amical</option>
-                      <option value="championnat">Championnat</option>
-                      <option value="coupe">Coupe</option>
+                      <option value="friendly">Amical</option>
+                      <option value="league">Championnat</option>
+                      <option value="cup">Coupe</option>
                     </select>
                   </div>
                   <div className="md:col-span-2 flex space-x-4">

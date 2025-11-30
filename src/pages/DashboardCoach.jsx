@@ -2,40 +2,12 @@ import React, { useState, useEffect } from 'react';
 import Navbar from '../components/Navbar';
 import Sidebar from '../components/Sidebar';
 import StatsCard from '../components/StatsCard';
-import LineChartComponent from '../components/Charts/LineChartComponent';
-import RadarChartComponent from '../components/Charts/RadarChartComponent';
-import TrainingsTable from '../components/TrainingsTable';
 import { Users, Calendar, TrendingUp, Award } from 'lucide-react';
-import trainingsService from '../services/trainingsService';
+import statsService from '../services/statsService';
 
 const DashboardCoach = () => {
-  const [stats, setStats] = useState({
-    myPlayers: 0,
-    recentTrainings: 0,
-    avgPerformance: 0,
-    attendanceRate: 0,
-  });
-  const [trainings, setTrainings] = useState([]);
+  const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
-
-  // Données factices pour les graphiques
-  const performanceEvolutionData = [
-    { semaine: 'S1', moyenne: 7.2 },
-    { semaine: 'S2', moyenne: 7.5 },
-    { semaine: 'S3', moyenne: 7.8 },
-    { semaine: 'S4', moyenne: 8.1 },
-    { semaine: 'S5', moyenne: 7.9 },
-    { semaine: 'S6', moyenne: 8.3 },
-  ];
-
-  const playerProfileData = [
-    { subject: 'Attaque', value: 85 },
-    { subject: 'Défense', value: 78 },
-    { subject: 'Service', value: 82 },
-    { subject: 'Réception', value: 88 },
-    { subject: 'Passe', value: 75 },
-    { subject: 'Contre', value: 80 },
-  ];
 
   useEffect(() => {
     fetchDashboardData();
@@ -44,18 +16,8 @@ const DashboardCoach = () => {
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
-
-      // Récupérer les séances récentes
-      const trainingsData = await trainingsService.getAllTrainings();
-      setTrainings(trainingsData.slice(0, 5));
-
-      // Données factices
-      setStats({
-        myPlayers: 18,
-        recentTrainings: 12,
-        avgPerformance: 8.1,
-        attendanceRate: 89,
-      });
+      const data = await statsService.getCoachStats();
+      setStats(data);
     } catch (error) {
       console.error('Erreur lors du chargement des données:', error);
     } finally {
@@ -63,21 +25,18 @@ const DashboardCoach = () => {
     }
   };
 
-  const handleDeleteTraining = async (id) => {
-    if (window.confirm('Êtes-vous sûr de vouloir supprimer cette séance ?')) {
-      try {
-        await trainingsService.deleteTraining(id);
-        setTrainings(trainings.filter((t) => t.id !== id));
-      } catch (error) {
-        console.error('Erreur lors de la suppression:', error);
-      }
-    }
-  };
-
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-dark-900">
         <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-neon-green"></div>
+      </div>
+    );
+  }
+
+  if (!stats) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-dark-900">
+        <p className="text-white">Erreur de chargement des statistiques</p>
       </div>
     );
   }
@@ -91,53 +50,113 @@ const DashboardCoach = () => {
           {/* Header */}
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-white mb-2">Dashboard Coach</h1>
-            <p className="text-gray-400">Suivez les performances de vos joueurs</p>
+            <p className="text-gray-400">Équipe : <span className="text-neon-green font-semibold">{stats.team}</span></p>
           </div>
 
           {/* Stats Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             <StatsCard
               title="Mes Joueurs"
-              value={stats.myPlayers}
+              value={stats.players.total}
               icon={Users}
               color="neon-green"
             />
             <StatsCard
-              title="Séances récentes"
-              value={stats.recentTrainings}
+              title="Séances"
+              value={stats.trainings.total}
               icon={Calendar}
               color="blue-500"
             />
             <StatsCard
               title="Performance moyenne"
-              value={`${stats.avgPerformance}/10`}
+              value={stats.performance.average ? `${stats.performance.average}/10` : 'N/A'}
               icon={Award}
               color="yellow-500"
             />
             <StatsCard
               title="Taux de présence"
-              value={`${stats.attendanceRate}%`}
+              value={`${stats.attendance.overall_rate}%`}
               icon={TrendingUp}
               color="green-500"
             />
           </div>
 
-          {/* Charts */}
+          {/* Stats Details */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-            <LineChartComponent
-              data={performanceEvolutionData}
-              dataKey="moyenne"
-              xKey="semaine"
-              title="Évolution des performances moyennes"
-            />
-            <RadarChartComponent
-              data={playerProfileData}
-              title="Profil de performance moyen"
-            />
+            {/* Players Status */}
+            <div className="card">
+              <h3 className="text-xl font-semibold text-white mb-4">Statut des joueurs</h3>
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-400">Actifs</span>
+                  <span className="text-green-500 font-semibold">{stats.players.active}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-400">Blessés</span>
+                  <span className="text-yellow-500 font-semibold">{stats.players.injured}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-400">Suspendus</span>
+                  <span className="text-red-500 font-semibold">{stats.players.suspended}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Trainings Status */}
+            <div className="card">
+              <h3 className="text-xl font-semibold text-white mb-4">Entraînements</h3>
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-400">Planifiés</span>
+                  <span className="text-blue-500 font-semibold">{stats.trainings.scheduled}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-400">Terminés</span>
+                  <span className="text-green-500 font-semibold">{stats.trainings.completed}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-400">Annulés</span>
+                  <span className="text-red-500 font-semibold">{stats.trainings.cancelled || 0}</span>
+                </div>
+              </div>
+            </div>
           </div>
 
+          {/* Top Players */}
+          {stats.top_players && stats.top_players.length > 0 && (
+            <div className="card mb-8">
+              <h3 className="text-xl font-semibold text-white mb-6">Top Joueurs de l'équipe</h3>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-dark-700">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Nom</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Poste</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">N°</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Présence</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Performance</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-dark-700">
+                    {stats.top_players.map((player) => (
+                      <tr key={player.id} className="hover:bg-dark-700/50">
+                        <td className="px-6 py-4 text-white">{player.name}</td>
+                        <td className="px-6 py-4 text-gray-300">{player.position}</td>
+                        <td className="px-6 py-4 text-gray-300">{player.jersey_number}</td>
+                        <td className="px-6 py-4 text-neon-green font-semibold">{player.attendance_rate}%</td>
+                        <td className="px-6 py-4 text-yellow-500 font-semibold">
+                          {player.average_performance ? `${player.average_performance}/10` : 'N/A'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
           {/* Quick Actions */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <button
               onClick={() => (window.location.href = '/trainings')}
               className="card hover:scale-105 transition-transform duration-300 text-center cursor-pointer"
@@ -153,7 +172,7 @@ const DashboardCoach = () => {
             >
               <Users size={48} className="text-blue-500 mx-auto mb-4" />
               <h3 className="text-lg font-semibold text-white mb-2">Mes joueurs</h3>
-              <p className="text-gray-400 text-sm">Voir la liste complète</p>
+              <p className="text-gray-400 text-sm">Gérer l'équipe</p>
             </button>
 
             <button
@@ -161,27 +180,9 @@ const DashboardCoach = () => {
               className="card hover:scale-105 transition-transform duration-300 text-center cursor-pointer"
             >
               <Award size={48} className="text-yellow-500 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-white mb-2">Statistiques</h3>
-              <p className="text-gray-400 text-sm">Analyser les performances</p>
+              <h3 className="text-lg font-semibold text-white mb-2">Matchs</h3>
+              <p className="text-gray-400 text-sm">Voir le calendrier</p>
             </button>
-          </div>
-
-          {/* Recent Trainings */}
-          <div className="card">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-semibold text-white">Séances récentes</h3>
-              <button
-                onClick={() => (window.location.href = '/trainings')}
-                className="text-neon-green hover:underline text-sm"
-              >
-                Voir tout
-              </button>
-            </div>
-            {trainings.length > 0 ? (
-              <TrainingsTable trainings={trainings} onDelete={handleDeleteTraining} />
-            ) : (
-              <p className="text-gray-400 text-center py-8">Aucune séance enregistrée</p>
-            )}
           </div>
         </main>
       </div>
@@ -189,4 +190,4 @@ const DashboardCoach = () => {
   );
 };
 
-export default DashboardCoach; 
+export default DashboardCoach;

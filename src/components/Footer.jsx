@@ -13,7 +13,7 @@ const Footer = () => {
               <div className="w-10 h-10 bg-neon-green rounded-lg flex items-center justify-center">
                 <span className="text-black font-bold text-xl">V</span>
               </div>
-              <span className="text-xl font-bold text-white">VolleyClub</span>
+              <span className="text-xl font-bold text-white">HilalVolleyClub</span>
             </div>
             <p className="text-gray-400 text-sm">
               Le club de volleyball de référence. Rejoignez-nous pour vivre votre passion !
@@ -53,7 +53,7 @@ const Footer = () => {
             <ul className="space-y-3">
               <li className="flex items-center space-x-2 text-gray-400 text-sm">
                 <MapPin size={16} className="text-neon-green" />
-                <span>123 Rue du Sport, Paris</span>
+                <span> Salle couverture de Nador, Nador</span>
               </li>
               <li className="flex items-center space-x-2 text-gray-400 text-sm">
                 <Phone size={16} className="text-neon-green" />
@@ -61,7 +61,7 @@ const Footer = () => {
               </li>
               <li className="flex items-center space-x-2 text-gray-400 text-sm">
                 <Mail size={16} className="text-neon-green" />
-                <span>contact@volleyclub.fr</span>
+                <span>Hilal@volleyClub.com</span>
               </li>
             </ul>
           </div>
@@ -71,29 +71,24 @@ const Footer = () => {
             <h3 className="text-white font-semibold mb-4">Suivez-nous</h3>
             <div className="flex space-x-4">
               
-              <a  href="#"
+              <a  href="https://www.facebook.com/profile.php?id=61561469993020"
                 className="w-10 h-10 bg-dark-700 rounded-lg flex items-center justify-center text-gray-400 hover:bg-neon-green hover:text-black transition"
               >
                 <Facebook size={20} />
               </a>
               
-                <a href="#"
+                <a href="https://www.instagram.com/hilalnador_volleyball/"
                 className="w-10 h-10 bg-dark-700 rounded-lg flex items-center justify-center text-gray-400 hover:bg-neon-green hover:text-black transition"
               >
                 <Instagram size={20} />
               </a>
-              
-               <a href="#"
-                className="w-10 h-10 bg-dark-700 rounded-lg flex items-center justify-center text-gray-400 hover:bg-neon-green hover:text-black transition"
-              >
-                <Twitter size={20} />
-              </a>
+  
             </div>
           </div>
         </div>
 
         <div className="border-t border-dark-700 mt-8 pt-8 text-center text-gray-400 text-sm">
-          <p>&copy; 2024 VolleyClub. Tous droits réservés.</p>
+          <p>&copy; 2024 HilalVolleyClub. Tous droits réservés.</p>
         </div>
       </div>
     </footer>

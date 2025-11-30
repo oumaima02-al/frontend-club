@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import ProtectedRoute from '../components/ProtectedRoute';
-import { trainingService } from '../services/trainings';
+import trainingsService from '../services/trainingsService';
 
 const Trainings = () => {
   const [trainings, setTrainings] = useState([]);
@@ -10,9 +10,10 @@ const Trainings = () => {
   const [formData, setFormData] = useState({
     title: '',
     date: '',
-    duration: '90',
-    objectives: '',
-    notes: ''
+    start_time: '',
+    end_time: '',
+    description: '',
+    location: ''
   });
 
   const { user, hasRole } = useAuth();
@@ -23,7 +24,7 @@ const Trainings = () => {
 
   const loadTrainings = async () => {
     try {
-      const response = await trainingService.getAll();
+      const response = await trainingsService.getAllTrainings();
       setTrainings(response.data);
     } catch (error) {
       console.error('Erreur lors du chargement des entraînements:', error);
@@ -35,12 +36,23 @@ const Trainings = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await trainingService.create(formData);
+      await trainingsService.createTraining(formData);
       setShowAddForm(false);
-      setFormData({ title: '', date: '', duration: '90', objectives: '', notes: '' });
+      setFormData({ title: '', date: '', start_time: '', end_time: '', description: '', location: '' });
       loadTrainings();
     } catch (error) {
       console.error('Erreur lors de l\'ajout de l\'entraînement:', error);
+      alert('Erreur lors de l\'ajout de l\'entraînement: ' + (error.response?.data?.message || error.message));
+    }
+  };
+
+  const handleStatusUpdate = async (trainingId, status) => {
+    try {
+      await trainingsService.updateTraining(trainingId, { status });
+      loadTrainings();
+    } catch (error) {
+      console.error('Erreur lors de la mise à jour du statut:', error);
+      alert('Erreur lors de la mise à jour du statut: ' + (error.response?.data?.message || error.message));
     }
   };
 
@@ -103,10 +115,10 @@ const Trainings = () => {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-300 mb-2">
-                        Date et heure
+                        Date
                       </label>
                       <input
-                        type="datetime-local"
+                        type="date"
                         name="date"
                         value={formData.date}
                         onChange={handleChange}
@@ -116,47 +128,56 @@ const Trainings = () => {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-300 mb-2">
-                        Durée (minutes)
+                        Heure de début
                       </label>
-                      <select
-                        name="duration"
-                        value={formData.duration}
+                      <input
+                        type="time"
+                        name="start_time"
+                        value={formData.start_time}
                         onChange={handleChange}
+                        required
                         className="w-full px-3 py-2 bg-gray-600 border border-gray-500 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-green-500"
-                      >
-                        <option value="60">60 minutes</option>
-                        <option value="90">90 minutes</option>
-                        <option value="120">120 minutes</option>
-                        <option value="150">150 minutes</option>
-                      </select>
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">
+                        Heure de fin
+                      </label>
+                      <input
+                        type="time"
+                        name="end_time"
+                        value={formData.end_time}
+                        onChange={handleChange}
+                        required
+                        className="w-full px-3 py-2 bg-gray-600 border border-gray-500 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-green-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">
+                        Lieu
+                      </label>
+                      <input
+                        type="text"
+                        name="location"
+                        value={formData.location}
+                        onChange={handleChange}
+                        className="w-full px-3 py-2 bg-gray-600 border border-gray-500 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500"
+                        placeholder="Salle de sport, Terrain..."
+                      />
                     </div>
                   </div>
-                  
+
                   <div>
                     <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Objectifs
+                      Description
                     </label>
                     <textarea
-                      name="objectives"
-                      value={formData.objectives}
+                      name="description"
+                      value={formData.description}
                       onChange={handleChange}
                       rows="3"
                       className="w-full px-3 py-2 bg-gray-600 border border-gray-500 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500"
-                      placeholder="Objectifs de cette séance..."
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Notes supplémentaires
-                    </label>
-                    <textarea
-                      name="notes"
-                      value={formData.notes}
-                      onChange={handleChange}
-                      rows="2"
-                      className="w-full px-3 py-2 bg-gray-600 border border-gray-500 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500"
-                      placeholder="Équipement nécessaire, consignes spéciales..."
+                      placeholder="Description de la séance d'entraînement..."
                     />
                   </div>
 
@@ -194,16 +215,17 @@ const Trainings = () => {
                           <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                           </svg>
-                          {new Date(training.date).toLocaleString('fr-FR')}
+                          {new Date(training.date).toLocaleDateString('fr-FR')} de {training.start_time} à {training.end_time}
                         </div>
-                        
+
                         <div className="flex items-center">
                           <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                           </svg>
-                          {training.duration} minutes
+                          {training.location || 'Non spécifié'}
                         </div>
-                        
+
                         <div className="flex items-center">
                           <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -238,21 +260,21 @@ const Trainings = () => {
                     <div className="flex space-x-2 ml-4">
                       {isCoach && training.status === 'upcoming' && (
                         <>
-                          <button 
-                            onClick={() => trainingService.updateStatus(training.id, { status: 'ongoing' })}
+                          <button
+                            onClick={() => handleStatusUpdate(training.id, 'ongoing')}
                             className="bg-yellow-600 hover:bg-yellow-700 text-white px-3 py-1 rounded text-sm transition duration-300"
                           >
                             Démarrer
                           </button>
-                          <button 
-                            onClick={() => trainingService.updateStatus(training.id, { status: 'completed' })}
+                          <button
+                            onClick={() => handleStatusUpdate(training.id, 'completed')}
                             className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm transition duration-300"
                           >
                             Terminer
                           </button>
                         </>
                       )}
-                      
+
                       {canManageTrainings && (
                         <button className="text-red-400 hover:text-red-300 text-sm">
                           Supprimer

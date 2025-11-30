@@ -23,7 +23,7 @@ const Navbar = ({ isLanding = false }) => {
               <div className="w-10 h-10 bg-neon-green rounded-lg flex items-center justify-center">
                 <span className="text-black font-bold text-xl">V</span>
               </div>
-              <span className="text-xl font-bold text-white">VolleyClub</span>
+              <span className="text-xl font-bold text-white">HilalVolleyClub</span>
             </Link>
 
             {/* Desktop Menu */}

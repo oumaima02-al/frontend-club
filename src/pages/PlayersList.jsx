@@ -6,9 +6,11 @@ import FileUpload from '../components/FileUpload';
 import { Plus, X, Search } from 'lucide-react';
 import playersService from '../services/playersService';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
 
 const PlayersList = () => {
   const { user } = useAuth();
+  const { showToast } = useToast();
   const [players, setPlayers] = useState([]);
   const [filteredPlayers, setFilteredPlayers] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -148,12 +150,12 @@ const PlayersList = () => {
 
   // Validation
   if (!editingPlayer && formData.password !== formData.password_confirmation) {
-    alert('Les mots de passe ne correspondent pas');
+    showToast('Les mots de passe ne correspondent pas', 'error');
     return;
   }
 
   if (!formData.name || !formData.email || !formData.age || !formData.team || !formData.position || !formData.number) {
-    alert('Veuillez remplir tous les champs obligatoires');
+    showToast('Veuillez remplir tous les champs obligatoires', 'error');
     return;
   }
 
@@ -180,12 +182,12 @@ const PlayersList = () => {
       console.log('🔄 Updating player ID:', editingPlayer.id);
       const updateResult = await playersService.updatePlayer(editingPlayer.id, dataToSend);
       console.log('✅ Update result:', updateResult);
-      alert('✅ Joueur modifié avec succès');
+      showToast('Joueur modifié avec succès', 'success');
     } else {
       console.log('🆕 Creating new player');
       const createResult = await playersService.createPlayer(dataToSend);
       console.log('✅ Create result:', createResult);
-      alert('✅ Joueur créé avec succès');
+      showToast('Joueur créé avec succès', 'success');
     }
 
     fetchPlayers();
@@ -237,10 +239,10 @@ const PlayersList = () => {
       try {
         await playersService.deletePlayer(id);
         fetchPlayers();
-        alert('Joueur supprimé avec succès');
+        showToast('Joueur supprimé avec succès', 'success');
       } catch (error) {
         console.error('Erreur lors de la suppression:', error);
-        alert(error.response?.data?.error || 'Erreur lors de la suppression du joueur');
+        showToast(error.response?.data?.error || 'Erreur lors de la suppression du joueur', 'error');
       }
     }
   };
@@ -274,10 +276,10 @@ const PlayersList = () => {
     );
   }
 
-  // ✅ Permissions: Admin can manage all players, Coach can manage players from their team
+  // ✅ Permissions: Admin can manage all players, Coach can manage players from their team but cannot delete
   const canAdd = user?.role === 'admin' || user?.role === 'coach';
   const canEdit = user?.role === 'admin' || user?.role === 'coach';
-  const canDelete = user?.role === 'admin' || user?.role === 'coach';
+  const canDelete = user?.role === 'admin'; // Only admin can delete players
 
   const availableTeams = user?.role === 'coach' && user?.team
     ? [user.team]
@@ -328,6 +330,7 @@ const PlayersList = () => {
                 onDelete={canDelete ? handleDelete : null}
                 onEdit={canEdit ? handleEdit : null}
                 canEdit={canEdit}
+                canDelete={canDelete}
               />
             ) : (
               <p className="text-gray-400 text-center py-8">Aucun joueur trouvé</p>

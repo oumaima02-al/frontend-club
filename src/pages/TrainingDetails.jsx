@@ -83,12 +83,12 @@ const TrainingDetails = () => {
     try {
       const attendanceData = Object.keys(attendance).map((playerId) => ({
         player_id: parseInt(playerId),
-        present: attendance[playerId].present || false,
-        performance: attendance[playerId].performance || null,
-        comment: attendance[playerId].comment || '',
+        status: attendance[playerId].present ? 'present' : 'absent',
+        performance_score: attendance[playerId].performance ? parseInt(attendance[playerId].performance) : null,
+        remarks: attendance[playerId].comment || null,
       }));
 
-      await trainingsService.recordAttendance(id, { attendance: attendanceData });
+      await trainingsService.recordAttendance(id, { attendances: attendanceData });
       alert('Présences enregistrées avec succès !');
       fetchTrainingDetails();
     } catch (error) {
@@ -122,7 +122,8 @@ const TrainingDetails = () => {
         await notificationsService.createNotification({
           title: 'Changement de statut d\'entraînement',
           message: `L'entraînement du ${new Date(training.date).toLocaleDateString('fr-FR')} est maintenant "${statusText[editFormData.status]}".`,
-          target: 'players',
+          target_role: 'player',
+          type: 'info',
         });
       }
 

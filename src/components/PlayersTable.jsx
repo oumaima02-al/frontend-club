@@ -67,7 +67,7 @@ const PlayersTable = ({ players, onDelete, onEdit, canEdit }) => {
                   >
                     <Eye size={18} />
                   </button>
-                  {/* ✅ SEUL L'ADMIN PEUT MODIFIER/SUPPRIMER */}
+                  {/* ✅ Admin and Coach can edit players */}
                   {canEdit && onEdit && (
                     <button
                       onClick={() => onEdit(player)}

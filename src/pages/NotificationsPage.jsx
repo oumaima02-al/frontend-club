@@ -15,7 +15,8 @@ const NotificationsPage = () => {
   const [formData, setFormData] = useState({
     title: '',
     message: '',
-    target: 'all',
+    target_role: 'all', // Use exact values from backend
+    type: 'info', // Use exact values from backend
   });
 
   useEffect(() => {
@@ -107,7 +108,8 @@ const NotificationsPage = () => {
     setFormData({
       title: '',
       message: '',
-      target: 'all',
+      target_role: 'all',
+      type: 'info',
     });
   };
 
@@ -194,18 +196,37 @@ const NotificationsPage = () => {
                 />
               </div>
 
+              {/* Type Field - Updated with exact backend values */}
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">Type de notification</label>
+                <select
+                  name="type"
+                  value={formData.type}
+                  onChange={handleInputChange}
+                  className="input-field"
+                  required
+                >
+                  <option value="info">Information</option>
+                  <option value="warning">Avertissement</option>
+                  <option value="success">Succès</option>
+                  <option value="urgent">Urgent</option>
+                </select>
+              </div>
+
+              {/* Target Role Field - Updated with exact backend values */}
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">Destinataires</label>
                 <select
-                  name="target"
-                  value={formData.target}
+                  name="target_role"
+                  value={formData.target_role}
                   onChange={handleInputChange}
                   className="input-field"
                   required
                 >
                   <option value="all">Tous les membres</option>
-                  <option value="players">Joueurs uniquement</option>
-                  <option value="coaches">Coaches uniquement</option>
+                  <option value="player">Joueurs uniquement</option>
+                  <option value="coach">Coaches uniquement</option>
+                  <option value="admin">Administrateurs uniquement</option>
                 </select>
               </div>
 

@@ -45,9 +45,6 @@ const TrainingsTable = ({ trainings, onDelete, canManage }) => {
               Statut
             </th>
             <th className="px-6 py-4 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-              Participants
-            </th>
-            <th className="px-6 py-4 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
               Actions
             </th>
           </tr>
@@ -62,7 +59,7 @@ const TrainingsTable = ({ trainings, onDelete, canManage }) => {
                 </div>
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-gray-300">
-                {training.time}
+                {training.start_time} - {training.end_time}
               </td>
               <td className="px-6 py-4 text-gray-300 max-w-xs truncate">
                 {training.description}
@@ -86,9 +83,6 @@ const TrainingsTable = ({ trainings, onDelete, canManage }) => {
                     ? 'À venir'
                     : 'En cours'}
                 </span>
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-gray-300">
-                {training.participants_count || 0}
               </td>
               <td className="px-6 py-4 whitespace-nowrap">
                 <div className="flex items-center space-x-2">

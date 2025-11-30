@@ -170,15 +170,21 @@ const PlayersList = () => {
       cv: formData.cv,
     };
 
+    if (!editingPlayer) {
+      dataToSend.password = formData.password;
+    }
+
     console.log('📤 Preparing to send:', dataToSend);
 
     if (editingPlayer) {
       console.log('🔄 Updating player ID:', editingPlayer.id);
-      await playersService.updatePlayer(editingPlayer.id, dataToSend);
+      const updateResult = await playersService.updatePlayer(editingPlayer.id, dataToSend);
+      console.log('✅ Update result:', updateResult);
       alert('✅ Joueur modifié avec succès');
     } else {
       console.log('🆕 Creating new player');
-      await playersService.createPlayer(dataToSend);
+      const createResult = await playersService.createPlayer(dataToSend);
+      console.log('✅ Create result:', createResult);
       alert('✅ Joueur créé avec succès');
     }
 
@@ -268,9 +274,10 @@ const PlayersList = () => {
     );
   }
 
+  // ✅ Permissions: Admin can manage all players, Coach can manage players from their team
   const canAdd = user?.role === 'admin' || user?.role === 'coach';
-  const canEdit = user?.role === 'admin';
-  const canDelete = user?.role === 'admin';
+  const canEdit = user?.role === 'admin' || user?.role === 'coach';
+  const canDelete = user?.role === 'admin' || user?.role === 'coach';
 
   const availableTeams = user?.role === 'coach' && user?.team
     ? [user.team]
@@ -453,7 +460,6 @@ const PlayersList = () => {
                     onChange={handleInputChange}
                     className="input-field"
                     required
-                    disabled={user?.role === 'coach'}
                   >
                     <option value="">Sélectionner une équipe</option>
                     {availableTeams.map((team) => (

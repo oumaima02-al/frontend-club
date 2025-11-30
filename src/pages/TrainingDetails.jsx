@@ -187,7 +187,7 @@ const TrainingDetails = () => {
                   </div>
                   <div>
                     <p className="text-sm mb-1">Heure</p>
-                    <p className="text-white font-semibold">{training.time}</p>
+                    <p className="text-white font-semibold">{training.start_time} - {training.end_time}</p>
                   </div>
                   <div>
                     <p className="text-sm mb-1">Lieu</p>

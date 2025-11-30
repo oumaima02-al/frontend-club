@@ -16,12 +16,12 @@ const TrainingsList = () => {
   const [showModal, setShowModal] = useState(false);
 
   const [formData, setFormData] = useState({
+    title: '',
     date: '',
-    time: '',
+    start_time: '',
+    end_time: '',
     description: '',
     location: '',
-    status: 'upcoming',
-    announce: false,
   });
 
   useEffect(() => {
@@ -56,6 +56,11 @@ const TrainingsList = () => {
       ...formData,
       [e.target.name]: value,
     });
+  };
+
+  const getTodayDate = () => {
+    const today = new Date();
+    return today.toISOString().split('T')[0];
   };
 
   const handleSubmit = async (e) => {
@@ -114,12 +119,12 @@ const TrainingsList = () => {
   const closeModal = () => {
     setShowModal(false);
     setFormData({
+      title: '',
       date: '',
-      time: '',
+      start_time: '',
+      end_time: '',
       description: '',
       location: '',
-      status: 'upcoming',
-      announce: false,
     });
   };
 
@@ -194,7 +199,20 @@ const TrainingsList = () => {
             </div>
 
             <form onSubmit={handleSubmit} className="p-6 space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">Titre *</label>
+                <input
+                  type="text"
+                  name="title"
+                  value={formData.title}
+                  onChange={handleInputChange}
+                  className="input-field"
+                  placeholder="Ex: Entraînement technique"
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">Date *</label>
                   <input
@@ -202,17 +220,30 @@ const TrainingsList = () => {
                     name="date"
                     value={formData.date}
                     onChange={handleInputChange}
+                    min={getTodayDate()}
                     className="input-field"
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Heure *</label>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Heure de début *</label>
                   <input
                     type="time"
-                    name="time"
-                    value={formData.time}
+                    name="start_time"
+                    value={formData.start_time}
+                    onChange={handleInputChange}
+                    className="input-field"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Heure de fin *</label>
+                  <input
+                    type="time"
+                    name="end_time"
+                    value={formData.end_time}
                     onChange={handleInputChange}
                     className="input-field"
                     required
@@ -245,32 +276,6 @@ const TrainingsList = () => {
                   required
                 />
               </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Statut</label>
-                <select 
-                  name="status" 
-                  value={formData.status} 
-                  onChange={handleInputChange} 
-                  className="input-field"
-                >
-                  <option value="upcoming">À venir</option>
-                  <option value="in_progress">En cours</option>
-                  <option value="completed">Terminée</option>
-                </select>
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  id="announce"
-                  name="announce"
-                  checked={formData.announce}
-                  onChange={handleInputChange}
-                  className="w-5 h-5 rounded border-gray-600 text-neon-green focus:ring-neon-green"
-                />
-                <label htmlFor="announce" className="text-gray-300 cursor-pointer">
-                  Notifier tous les joueurs de ce nouvel entraînement</label> </div>
 
           <div className="flex items-center justify-end space-x-4 pt-4">
             <button type="button" onClick={closeModal} className="btn-secondary">
